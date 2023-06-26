@@ -47,7 +47,7 @@ try:
     from pyfftw.interfaces.numpy_fft import fft
     from pyfftw.interfaces.numpy_fft import ifft
 except:
-    logger.info("csr.py: module PYFFTW is not installed."
+    logger.debug("csr.py: module PYFFTW is not installed."
                 " Install it to speed up calculation.")
     from numpy.fft import ifft
     from numpy.fft import fft
@@ -56,7 +56,7 @@ try:
     import numexpr as ne
     ne_flag = True
 except:
-    logger.info("csr.py: module NUMEXPR is not installed."
+    logger.debug("csr.py: module NUMEXPR is not installed."
                 " Install it to speed up calculation")
     ne_flag = False
 
