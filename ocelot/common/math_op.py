@@ -12,7 +12,7 @@ try:
     import numba as nb
     numba_avail = True
 except ImportError:
-    print("math_op.py: module Numba is not installed. Install it if you want speed up correlation calculations")
+    # print("math_op.py: module Numba is not installed. Install it if you want speed up correlation calculations")
     numba_avail = False
 
 def complete_gamma(a, z):
