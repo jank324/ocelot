@@ -13,7 +13,7 @@ try:
     import numba as nb
     nb_flag = True
 except:
-    _logger.info("high_order.py: module NUMBA is not installed. Install it to speed up calculation")
+    _logger.debug("high_order.py: module NUMBA is not installed. Install it to speed up calculation")
     nb_flag = False
     
 __MAD__ = True
