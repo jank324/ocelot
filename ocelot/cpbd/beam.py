@@ -34,7 +34,7 @@ try:
 
     nb_flag = True
 except:
-    _logger.info("beam.py: module NUMBA is not installed. Install it to speed up calculation")
+    _logger.debug("beam.py: module NUMBA is not installed. Install it to speed up calculation")
     nb_flag = False
 
 """
