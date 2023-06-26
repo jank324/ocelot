@@ -62,21 +62,18 @@ from ocelot.cpbd.csr import *
 from ocelot.cpbd.wake3D import *
 from ocelot.cpbd.physics_proc import *
 
-
-print('initializing ocelot...')
-
 try:
     import numba
 except:
-    print("import: module NUMBA is not installed. Install it to speed up calculation")
+    # print("import: module NUMBA is not installed. Install it to speed up calculation")
 
 try:
     import pyfftw
 except:
-    print("import: module PYFFTW is not installed. Install it to speed up calculation")
+    # print("import: module PYFFTW is not installed. Install it to speed up calculation")
 
 try:
     import numexpr
 except:
-    print("import: module NUMEXPR is not installed. Install it to speed up calculation")
+    # print("import: module NUMEXPR is not installed. Install it to speed up calculation")
 
