@@ -18,7 +18,7 @@ try:
 
     nb_flag = True
 except:
-    _logger.info("wake3D.py: module NUMBA is not installed. Install it to speed up calculation")
+    _logger.debug("wake3D.py: module NUMBA is not installed. Install it to speed up calculation")
     nb_flag = False
 
 
