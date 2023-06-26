@@ -38,7 +38,7 @@ try:
     import numba as nb
     nb_flag = True
 except:
-    logger.info("csr.py: module NUMBA is not installed."
+    logger.debug("csr.py: module NUMBA is not installed."
                 " Install it to speed up calculation")
     nb_flag = False
 
