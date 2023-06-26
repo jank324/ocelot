@@ -66,14 +66,16 @@ try:
     import numba
 except:
     # print("import: module NUMBA is not installed. Install it to speed up calculation")
+    pass
 
 try:
     import pyfftw
 except:
     # print("import: module PYFFTW is not installed. Install it to speed up calculation")
+    pass
 
 try:
     import numexpr
 except:
     # print("import: module NUMEXPR is not installed. Install it to speed up calculation")
-
+    pass
