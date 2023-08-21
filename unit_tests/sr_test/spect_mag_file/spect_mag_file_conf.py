@@ -1,28 +1,28 @@
 """Test parameters description file"""
 
-import pytest
 import os
+
+import pytest
 
 from ocelot import *
 from ocelot.rad import *
 
-
 """Lattice elements definition"""
 
-mag_file = os.path.dirname(os.path.abspath(__file__)) + '/mag_file.txt'
+mag_file = os.path.dirname(os.path.abspath(__file__)) + "/mag_file.txt"
 und = Undulator(field_file=mag_file, eid="und")
 
 
 """pytest fixtures definition"""
-    
-@pytest.fixture(scope='module')
+
+
+@pytest.fixture(scope="module")
 def lattice():
     return MagneticLattice((und))
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def beam():
-
     b = Beam()
     b.E = 1.25
     b.I = 0.1
@@ -33,9 +33,8 @@ def beam():
     return b
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def screen():
-
     s = Screen()
     s.z = 50.0
     s.size_x = 0.0

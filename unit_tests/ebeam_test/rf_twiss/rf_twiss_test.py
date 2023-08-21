@@ -1,17 +1,21 @@
 """Test of the demo file demos/ebeam/rf_twiss.py"""
 
-from rf_twiss_conf import *
-from unit_tests.params import *
+import copy
 import os
 import sys
 import time
-import copy
+
+from rf_twiss_conf import *
+
+from unit_tests.params import *
 
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-REF_RES_DIR = FILE_DIR + '/ref_results/'
+REF_RES_DIR = FILE_DIR + "/ref_results/"
 
 
-def test_lattice_transfer_map(lattice, p_array, parameter=None, update_ref_values=False):
+def test_lattice_transfer_map(
+    lattice, p_array, parameter=None, update_ref_values=False
+):
     """R maxtrix test"""
 
     beam = Beam()
@@ -22,14 +26,18 @@ def test_lattice_transfer_map(lattice, p_array, parameter=None, update_ref_value
     if update_ref_values:
         return numpy2json(r_matrix)
 
-    r_matrix_ref = json2numpy(json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json'))
+    r_matrix_ref = json2numpy(
+        json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
+    )
 
-    result = check_matrix(r_matrix, r_matrix_ref, TOL, assert_info=' r_matrix - ')
+    result = check_matrix(r_matrix, r_matrix_ref, TOL, assert_info=" r_matrix - ")
     assert check_result(result)
 
 
-@pytest.mark.parametrize('parameter', [0, 1])
-def test_lattice_r_t_maps_wo_coupler(lattice, p_array, parameter, update_ref_values=False):
+@pytest.mark.parametrize("parameter", [0, 1])
+def test_lattice_r_t_maps_wo_coupler(
+    lattice, p_array, parameter, update_ref_values=False
+):
     """R maxtrix test"""
     if parameter == 0:
         for elem in lattice.sequence:
@@ -61,16 +69,24 @@ def test_lattice_r_t_maps_wo_coupler(lattice, p_array, parameter, update_ref_val
     r_matrix = lattice_transfer_map(lattice, beam.E)
 
     if update_ref_values:
-        return {'r': r_matrix.tolist(), 't': lattice.T.tolist()}
+        return {"r": r_matrix.tolist(), "t": lattice.T.tolist()}
 
-    matrices_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + str(parameter) + '.json')
+    matrices_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + str(parameter) + ".json"
+    )
 
-    result = check_matrix(r_matrix, matrices_ref["r"], TOL, assert_info=' r_matrix - ')
-    result2 = check_matrix(lattice.T, matrices_ref["t"], TOL, assert_info=' t_matrix - ', numerical_zero=1e-12)
+    result = check_matrix(r_matrix, matrices_ref["r"], TOL, assert_info=" r_matrix - ")
+    result2 = check_matrix(
+        lattice.T,
+        matrices_ref["t"],
+        TOL,
+        assert_info=" t_matrix - ",
+        numerical_zero=1e-12,
+    )
     assert check_result(result + result2)
 
 
-@pytest.mark.parametrize('parameter', [0, 1])
+@pytest.mark.parametrize("parameter", [0, 1])
 def test_track_wo_coupler(lattice, p_array, parameter, update_ref_values=False):
     """R maxtrix test"""
     if parameter == 0:
@@ -106,12 +122,18 @@ def test_track_wo_coupler(lattice, p_array, parameter, update_ref_values=False):
     p = obj2dict(p_array0)
 
     if update_ref_values:
-        return {'tws_track': tws, 'p_array': p}
+        return {"tws_track": tws, "p_array": p}
 
-    tws_track_p_array_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + str(parameter) + '.json')
+    tws_track_p_array_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + str(parameter) + ".json"
+    )
 
-    result1 = check_dict(tws, tws_track_p_array_ref['tws_track'], TOL, assert_info=' tws_track - ')
-    result2 = check_dict(p, tws_track_p_array_ref['p_array'], TOL, assert_info=' p_array - ')
+    result1 = check_dict(
+        tws, tws_track_p_array_ref["tws_track"], TOL, assert_info=" tws_track - "
+    )
+    result2 = check_dict(
+        p, tws_track_p_array_ref["p_array"], TOL, assert_info=" p_array - "
+    )
     assert check_result(result1 + result2)
 
 
@@ -133,29 +155,26 @@ def test_twiss(lattice, p_array, parameter=None, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws - ')
+    result = check_dict(tws, tws_ref, TOL, "absotute", assert_info=" tws - ")
     assert check_result(result)
 
 
 def setup_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### RF_TWISS START ###\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### RF_TWISS START ###\n\n")
     f.close()
 
 
 def teardown_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### RF_TWISS END ###\n\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### RF_TWISS END ###\n\n\n")
     f.close()
 
 
 def setup_function(function):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
     f.write(function.__name__)
     f.close()
 
@@ -163,33 +182,43 @@ def setup_function(function):
 
 
 def teardown_function(function):
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write(' execution time is ' + '{:.3f}'.format(time.time() - pytest.t_start) + ' sec\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write(
+        " execution time is "
+        + "{:.3f}".format(time.time() - pytest.t_start)
+        + " sec\n\n"
+    )
     f.close()
 
 
 @pytest.mark.update
 def test_update_ref_values(lattice, p_array, cmdopt):
-
     update_functions = []
-    update_functions.append('test_lattice_transfer_map')
-    update_functions.append('test_twiss')
+    update_functions.append("test_lattice_transfer_map")
+    update_functions.append("test_twiss")
     # update_functions.append('test_lattice_transfer_map_after_matching')
     # update_functions.append('test_twiss_after_matching')
 
-    update_functions.append('test_lattice_r_t_maps_wo_coupler')
-    update_functions.append('test_track_wo_coupler')
+    update_functions.append("test_lattice_r_t_maps_wo_coupler")
+    update_functions.append("test_track_wo_coupler")
     update_function_parameters = {}
-    update_function_parameters['test_lattice_r_t_maps_wo_coupler'] = [0, 1]
-    update_function_parameters['test_track_wo_coupler'] = [0, 1]
+    update_function_parameters["test_lattice_r_t_maps_wo_coupler"] = [0, 1]
+    update_function_parameters["test_track_wo_coupler"] = [0, 1]
 
-    parameter = update_function_parameters[cmdopt] if cmdopt in update_function_parameters.keys() else ['']
+    parameter = (
+        update_function_parameters[cmdopt]
+        if cmdopt in update_function_parameters.keys()
+        else [""]
+    )
     if cmdopt in update_functions:
         for p in parameter:
             p_arr = copy.deepcopy(p_array)
             result = eval(cmdopt)(lattice, p_arr, p, True)
 
-            if os.path.isfile(REF_RES_DIR + cmdopt + str(p) + '.json'):
-                os.rename(REF_RES_DIR + cmdopt + str(p) + '.json', REF_RES_DIR + cmdopt + str(p) + '.old')
+            if os.path.isfile(REF_RES_DIR + cmdopt + str(p) + ".json"):
+                os.rename(
+                    REF_RES_DIR + cmdopt + str(p) + ".json",
+                    REF_RES_DIR + cmdopt + str(p) + ".old",
+                )
 
-            json_save(result, REF_RES_DIR + cmdopt + str(p) + '.json')
+            json_save(result, REF_RES_DIR + cmdopt + str(p) + ".json")

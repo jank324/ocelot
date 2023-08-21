@@ -1,17 +1,21 @@
 """Test of the demo file demos/ebeam/csr_ex.py"""
 
-from csr_ex_conf import *
-from unit_tests.params import *
+import copy
 import os
 import sys
-import copy
 import time
 
+from csr_ex_conf import *
+
+from unit_tests.params import *
+
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-REF_RES_DIR = FILE_DIR + '/ref_results/'
+REF_RES_DIR = FILE_DIR + "/ref_results/"
 
 
-def test_lattice_transfer_map(lattice, p_array, parameter=None, update_ref_values=False):
+def test_lattice_transfer_map(
+    lattice, p_array, parameter=None, update_ref_values=False
+):
     """R matrix calculation test"""
 
     r_matrix = lattice_transfer_map(lattice, 0.0)
@@ -19,17 +23,30 @@ def test_lattice_transfer_map(lattice, p_array, parameter=None, update_ref_value
     if update_ref_values:
         return numpy2json(r_matrix)
 
-    r_matrix_ref = json2numpy(json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json'))
+    r_matrix_ref = json2numpy(
+        json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
+    )
 
-    result = check_matrix(r_matrix, r_matrix_ref, tolerance=1.0e-10, tolerance_type='absolute', assert_info=' r_matrix - ')
+    result = check_matrix(
+        r_matrix,
+        r_matrix_ref,
+        tolerance=1.0e-10,
+        tolerance_type="absolute",
+        assert_info=" r_matrix - ",
+    )
     assert check_result(result)
 
 
-@pytest.mark.parametrize('parameter', [0, 1])
+@pytest.mark.parametrize("parameter", [0, 1])
 def test_lattice_transfer_map_RT(lattice, p_array, parameter, update_ref_values=False):
     """test R56 and T566 of the chicane"""
 
-    r56, t566, u5666, Sref = chicane_RTU(yoke_len=b1.l/b1.angle*np.sin(b1.angle), dip_dist=d1.l*np.cos(b1.angle), r=b1.l/b1.angle, type='c')
+    r56, t566, u5666, Sref = chicane_RTU(
+        yoke_len=b1.l / b1.angle * np.sin(b1.angle),
+        dip_dist=d1.l * np.cos(b1.angle),
+        r=b1.l / b1.angle,
+        type="c",
+    )
     lattice = copy.deepcopy(lattice)
 
     if parameter == 1:
@@ -41,12 +58,14 @@ def test_lattice_transfer_map_RT(lattice, p_array, parameter, update_ref_values=
 
     r_matrix = lattice_transfer_map(lattice, 0.0)
     result1 = check_value(r_matrix[4, 5], r56, tolerance=1.0e-14, assert_info=" R56 ")
-    result2 = check_value(lattice.T[4, 5, 5], t566, tolerance=1.0e-14, assert_info=" T566 ")
+    result2 = check_value(
+        lattice.T[4, 5, 5], t566, tolerance=1.0e-14, assert_info=" T566 "
+    )
 
     assert check_result([result1, result2])
 
 
-@pytest.mark.parametrize('parameter', [0, 1])
+@pytest.mark.parametrize("parameter", [0, 1])
 def test_track_without_csr(lattice, p_array, parameter, update_ref_values=False):
     """
     track function test without CSR
@@ -57,7 +76,7 @@ def test_track_without_csr(lattice, p_array, parameter, update_ref_values=False)
 
     tilt = 0
     if parameter == 1:
-        tilt = np.pi/2.
+        tilt = np.pi / 2.0
 
     for elem in lattice.sequence:
         if elem.__class__ == Bend:
@@ -78,19 +97,27 @@ def test_track_without_csr(lattice, p_array, parameter, update_ref_values=False)
     p = obj2dict(pytest.p_array_wo)
 
     if update_ref_values:
-        return {'tws_track': tws_track, 'p_array': p}
+        return {"tws_track": tws_track, "p_array": p}
 
-    tws_track_p_array_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_track_p_array_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + ".json"
+    )
 
-    result1 = check_dict(tws_track, tws_track_p_array_ref['tws_track'], TOL, assert_info=' tws_track - ')
+    result1 = check_dict(
+        tws_track, tws_track_p_array_ref["tws_track"], TOL, assert_info=" tws_track - "
+    )
     if parameter == 1:
         result1 = [None]
-    result2 = check_dict(p, tws_track_p_array_ref['p_array'], tolerance=TOL, assert_info=' p - ')
-    assert check_result(result1+result2)
+    result2 = check_dict(
+        p, tws_track_p_array_ref["p_array"], tolerance=TOL, assert_info=" p - "
+    )
+    assert check_result(result1 + result2)
 
 
-def test_track_without_csr_tilted(lattice, p_array, parameter=None, update_ref_values=False):
-    """track function test without CSR in vertical plane """
+def test_track_without_csr_tilted(
+    lattice, p_array, parameter=None, update_ref_values=False
+):
+    """track function test without CSR in vertical plane"""
     lattice = copy.deepcopy(lattice)
 
     for elem in lattice.sequence:
@@ -106,16 +133,22 @@ def test_track_without_csr_tilted(lattice, p_array, parameter=None, update_ref_v
     p = obj2dict(p_array_wo)
 
     if update_ref_values:
-        return {'tws_track': tws_track, 'p_array': p}
+        return {"tws_track": tws_track, "p_array": p}
 
-    tws_track_p_array_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_track_p_array_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + ".json"
+    )
 
-    result1 = check_dict(tws_track, tws_track_p_array_ref['tws_track'], TOL, assert_info=' tws_track - ')
-    result2 = check_dict(p, tws_track_p_array_ref['p_array'], TOL, assert_info=' p - ')
+    result1 = check_dict(
+        tws_track, tws_track_p_array_ref["tws_track"], TOL, assert_info=" tws_track - "
+    )
+    result2 = check_dict(p, tws_track_p_array_ref["p_array"], TOL, assert_info=" p - ")
     assert check_result(result1 + result2)
 
 
-def test_track_without_csr_rotated(lattice, p_array, parameter=None, update_ref_values=False):
+def test_track_without_csr_rotated(
+    lattice, p_array, parameter=None, update_ref_values=False
+):
     """track function test without CSR, comparison between the rotated beam and track in vertical plane"""
     lattice_copy = copy.deepcopy(lattice)
     p_array_copy = copy.deepcopy(p_array)
@@ -149,11 +182,11 @@ def test_track_without_csr_rotated(lattice, p_array, parameter=None, update_ref_
     p1 = obj2dict(p_array_wo_tilted)
 
     p2 = obj2dict(p_array)
-    result2 = check_dict(p1, p2, TOL, assert_info=' p - ')
+    result2 = check_dict(p1, p2, TOL, assert_info=" p - ")
     assert check_result(result2)
 
 
-@pytest.mark.parametrize('parameter', [0, 1])
+@pytest.mark.parametrize("parameter", [0, 1])
 def test_track_with_csr(lattice, p_array, parameter, update_ref_values=False):
     """
     track function test with CSR
@@ -164,7 +197,7 @@ def test_track_with_csr(lattice, p_array, parameter, update_ref_values=False):
 
     tilt = 0
     if parameter == 1:
-        tilt = np.pi/2.
+        tilt = np.pi / 2.0
 
     for elem in lattice.sequence:
         if elem.__class__ == Bend:
@@ -190,18 +223,24 @@ def test_track_with_csr(lattice, p_array, parameter, update_ref_values=False):
     p = obj2dict(pytest.p_array_w)
 
     if update_ref_values:
-        return {'tws_track': tws_track, 'p_array': p}
+        return {"tws_track": tws_track, "p_array": p}
 
-    tws_track_p_array_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_track_p_array_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + ".json"
+    )
 
-    result1 = check_dict(tws_track, tws_track_p_array_ref['tws_track'], TOL, assert_info=' tws_track - ')
+    result1 = check_dict(
+        tws_track, tws_track_p_array_ref["tws_track"], TOL, assert_info=" tws_track - "
+    )
     if parameter == 1:
         result1 = [None]
-    result2 = check_dict(p, tws_track_p_array_ref['p_array'], TOL, assert_info=' p_array - ')
-    assert check_result(result1+result2)
+    result2 = check_dict(
+        p, tws_track_p_array_ref["p_array"], TOL, assert_info=" p_array - "
+    )
+    assert check_result(result1 + result2)
 
 
-@pytest.mark.parametrize('parameter', [0, 1])
+@pytest.mark.parametrize("parameter", [0, 1])
 def test_get_current(lattice, p_array, parameter, update_ref_values=False):
     """Get current function test
     :parametr=0 - tracking was done without CSR
@@ -209,12 +248,12 @@ def test_get_current(lattice, p_array, parameter, update_ref_values=False):
     """
 
     if parameter == 0:
-        if not hasattr(pytest, 'istracked_wo') or not pytest.istracked_wo:
+        if not hasattr(pytest, "istracked_wo") or not pytest.istracked_wo:
             test_track_without_csr(lattice, p_array, 0, True)
 
         p = pytest.p_array_wo
     else:
-        if not hasattr(pytest, 'istracked_w') or not pytest.istracked_w:
+        if not hasattr(pytest, "istracked_w") or not pytest.istracked_w:
             test_track_with_csr(lattice, p_array, 0, True)
 
         p = pytest.p_array_w
@@ -224,22 +263,28 @@ def test_get_current(lattice, p_array, parameter, update_ref_values=False):
     if update_ref_values:
         return numpy2json([sI1, I1])
 
-    I_ref = json2numpy(json_read(REF_RES_DIR + sys._getframe().f_code.co_name + str(parameter) + '.json'))
+    I_ref = json2numpy(
+        json_read(
+            REF_RES_DIR + sys._getframe().f_code.co_name + str(parameter) + ".json"
+        )
+    )
 
-    result1 = check_matrix(sI1, I_ref[0], TOL, assert_info=' sI1 - ')
-    result2 = check_matrix(I1, I_ref[1], TOL, assert_info=' I1 - ')
-    assert check_result(result1+result2)
+    result1 = check_matrix(sI1, I_ref[0], TOL, assert_info=" sI1 - ")
+    result2 = check_matrix(I1, I_ref[1], TOL, assert_info=" I1 - ")
+    assert check_result(result1 + result2)
 
 
-def test_track_undulator_with_csr(lattice, p_array, parameter=None, update_ref_values=False):
-    """track function test without CSR in vertical plane """
+def test_track_undulator_with_csr(
+    lattice, p_array, parameter=None, update_ref_values=False
+):
+    """track function test without CSR in vertical plane"""
 
     d1 = Drift(l=0.2)
     d2 = Drift(l=1)
 
     und = Undulator(lperiod=0.4, nperiods=9, Kx=44.81)
 
-    m = {'global': SecondTM}
+    m = {"global": SecondTM}
 
     lat = MagneticLattice((d1, und, d2), method=m)
 
@@ -247,7 +292,7 @@ def test_track_undulator_with_csr(lattice, p_array, parameter=None, update_ref_v
     navi.unit_step = 0.05
 
     csr = CSR()
-    #csr.pict_debug = True
+    # csr.pict_debug = True
     csr.energy = p_array.E
     navi.add_physics_proc(csr, lat.sequence[0], lat.sequence[-1])
 
@@ -257,12 +302,16 @@ def test_track_undulator_with_csr(lattice, p_array, parameter=None, update_ref_v
     p = obj2dict(p_array_wo)
 
     if update_ref_values:
-        return {'tws_track': tws_track, 'p_array': p}
+        return {"tws_track": tws_track, "p_array": p}
 
-    tws_track_p_array_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_track_p_array_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + ".json"
+    )
 
-    result1 = check_dict(tws_track, tws_track_p_array_ref['tws_track'], TOL, assert_info=' tws_track - ')
-    result2 = check_dict(p, tws_track_p_array_ref['p_array'], TOL, assert_info=' p - ')
+    result1 = check_dict(
+        tws_track, tws_track_p_array_ref["tws_track"], TOL, assert_info=" tws_track - "
+    )
+    result2 = check_dict(p, tws_track_p_array_ref["p_array"], TOL, assert_info=" p - ")
     assert check_result(result1 + result2)
 
 
@@ -288,7 +337,7 @@ def test_csr_arcline_rk_traj(lattice, p_array, parameter=None, update_ref_values
     navi.unit_step = 0.05
 
     csr = CSR()
-    #csr.pict_debug = True
+    # csr.pict_debug = True
     csr.energy = 100
     csr.rk_traj = True
     navi.add_physics_proc(csr, lattice_copy.sequence[0], lattice_copy.sequence[-1])
@@ -299,19 +348,23 @@ def test_csr_arcline_rk_traj(lattice, p_array, parameter=None, update_ref_values
 
     p2 = obj2dict(p_array_rk)
 
-    result2 = check_dict(p1, p2, tolerance=1.0e-8, tolerance_type='absolute', assert_info=' p - ')
+    result2 = check_dict(
+        p1, p2, tolerance=1.0e-8, tolerance_type="absolute", assert_info=" p - "
+    )
     assert check_result(result2)
 
 
-def test_track_undulator_endings_with_csr(lattice, p_array, parameter=None, update_ref_values=False):
-    """track function test without CSR in vertical plane """
+def test_track_undulator_endings_with_csr(
+    lattice, p_array, parameter=None, update_ref_values=False
+):
+    """track function test without CSR in vertical plane"""
 
     d1 = Drift(l=0.2)
     d2 = Drift(l=1)
 
     und = Undulator(lperiod=0.4, nperiods=9, Kx=44.81)
 
-    m = {'global': SecondTM}
+    m = {"global": SecondTM}
 
     lat = MagneticLattice((d1, und, d2), method=m)
 
@@ -319,7 +372,7 @@ def test_track_undulator_endings_with_csr(lattice, p_array, parameter=None, upda
     navi.unit_step = 0.05
 
     csr = CSR()
-    #csr.pict_debug = True
+    # csr.pict_debug = True
     csr.end_poles = True
     csr.energy = p_array.E
     navi.add_physics_proc(csr, lat.sequence[0], lat.sequence[-1])
@@ -330,32 +383,33 @@ def test_track_undulator_endings_with_csr(lattice, p_array, parameter=None, upda
     p = obj2dict(p_array_wo)
 
     if update_ref_values:
-        return {'tws_track': tws_track, 'p_array': p}
+        return {"tws_track": tws_track, "p_array": p}
 
-    tws_track_p_array_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_track_p_array_ref = json_read(
+        REF_RES_DIR + sys._getframe().f_code.co_name + ".json"
+    )
 
-    result1 = check_dict(tws_track, tws_track_p_array_ref['tws_track'], TOL, assert_info=' tws_track - ')
-    result2 = check_dict(p, tws_track_p_array_ref['p_array'], TOL, assert_info=' p - ')
+    result1 = check_dict(
+        tws_track, tws_track_p_array_ref["tws_track"], TOL, assert_info=" tws_track - "
+    )
+    result2 = check_dict(p, tws_track_p_array_ref["p_array"], TOL, assert_info=" p - ")
     assert check_result(result1 + result2)
 
 
 def setup_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### CSR_EX START ###\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### CSR_EX START ###\n\n")
     f.close()
 
 
 def teardown_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### CSR_EX END ###\n\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### CSR_EX END ###\n\n\n")
     f.close()
 
 
 def setup_function(function):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
     f.write(function.__name__)
     f.close()
 
@@ -363,35 +417,45 @@ def setup_function(function):
 
 
 def teardown_function(function):
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write(' execution time is ' + '{:.3f}'.format(time.time() - pytest.t_start) + ' sec\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write(
+        " execution time is "
+        + "{:.3f}".format(time.time() - pytest.t_start)
+        + " sec\n\n"
+    )
     f.close()
 
 
 @pytest.mark.update
 def test_update_ref_values(lattice, p_array, cmdopt):
-
     update_functions = []
-    update_functions.append('test_lattice_transfer_map')
-    update_functions.append('test_track_without_csr')
-    update_functions.append('test_track_without_csr_tilted')
-    update_functions.append('test_track_with_csr')
+    update_functions.append("test_lattice_transfer_map")
+    update_functions.append("test_track_without_csr")
+    update_functions.append("test_track_without_csr_tilted")
+    update_functions.append("test_track_with_csr")
 
-    update_functions.append('test_get_current')
+    update_functions.append("test_get_current")
     update_function_parameters = {}
-    update_function_parameters['test_get_current'] = [0, 1]
+    update_function_parameters["test_get_current"] = [0, 1]
 
-    update_functions.append('test_track_undulator_with_csr')
+    update_functions.append("test_track_undulator_with_csr")
     update_functions.append("test_csr_arcline_rk_traj")
     update_functions.append("test_track_undulator_endings_with_csr")
-    parametr = update_function_parameters[cmdopt] if cmdopt in update_function_parameters.keys() else ['']
+    parametr = (
+        update_function_parameters[cmdopt]
+        if cmdopt in update_function_parameters.keys()
+        else [""]
+    )
 
     if cmdopt in update_functions:
         for p in parametr:
             p_arr = copy.deepcopy(p_array)
             result = eval(cmdopt)(lattice, p_arr, p, True)
 
-            if os.path.isfile(REF_RES_DIR + cmdopt + str(p) + '.json'):
-                os.rename(REF_RES_DIR + cmdopt + str(p) + '.json', REF_RES_DIR + cmdopt + str(p) + '.old')
+            if os.path.isfile(REF_RES_DIR + cmdopt + str(p) + ".json"):
+                os.rename(
+                    REF_RES_DIR + cmdopt + str(p) + ".json",
+                    REF_RES_DIR + cmdopt + str(p) + ".old",
+                )
 
-            json_save(result, REF_RES_DIR + cmdopt + str(p) + '.json')
+            json_save(result, REF_RES_DIR + cmdopt + str(p) + ".json")

@@ -5,11 +5,11 @@ Added wake table WakeTableDechirperOffAxis on 11.2019
 @authors: S. Tomin and I. Zagorodnov
 """
 
+import logging
+
 from ocelot.adaptors import *
 from ocelot.adaptors.astra2ocelot import *
 from ocelot.cpbd.physics_proc import PhysProc
-
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -18,15 +18,17 @@ try:
 
     nb_flag = True
 except:
-    _logger.debug("wake3D.py: module NUMBA is not installed. Install it to speed up calculation")
+    _logger.debug(
+        "wake3D.py: module NUMBA is not installed. Install it to speed up calculation"
+    )
     nb_flag = False
 
 
 def triang_filter(x, filter_order):
     Ns = x.shape[0]
     for i in range(filter_order):
-        x[1:Ns] = (x[1:Ns] + x[0:Ns - 1]) * 0.5
-        x[0:Ns - 1] = (x[1:Ns] + x[0:Ns - 1]) * 0.5
+        x[1:Ns] = (x[1:Ns] + x[0 : Ns - 1]) * 0.5
+        x[0 : Ns - 1] = (x[1:Ns] + x[0 : Ns - 1]) * 0.5
     return x
 
 
@@ -34,7 +36,7 @@ def Der(x, y):
     # numerical derivative
     n = x.shape[0]
     dy = np.zeros(n)
-    dy[1:n - 1] = (y[2:n] - y[0:n - 2]) / (x[2:n] - x[0:n - 2])
+    dy[1 : n - 1] = (y[2:n] - y[0 : n - 2]) / (x[2:n] - x[0 : n - 2])
     dy[0] = (y[1] - y[0]) / (x[1] - x[0])
     dy[n - 1] = (y[n - 1] - y[n - 2]) / (x[n - 1] - x[n - 2])
     return dy
@@ -92,7 +94,7 @@ def s2current(s_array, q_array, n_points, filter_order, mean_vel):
     """
     s0 = np.min(s_array)
     s1 = np.max(s_array)
-    NF2 = int(np.floor(filter_order / 2.))
+    NF2 = int(np.floor(filter_order / 2.0))
     n_points = n_points + 2 * NF2
 
     ds = (s1 - s0) / (n_points - 2 - 2 * NF2)
@@ -160,13 +162,13 @@ class WakeTable:
             ind = ind + 2
             if N0 > 0:
                 W0 = np.zeros([N0, 2])
-                W0[0:N0, :] = W[ind + 1:ind + N0 + 1, :]
+                W0[0:N0, :] = W[ind + 1 : ind + N0 + 1, :]
                 ind = ind + N0
             else:
                 W0 = 0
             if N1 > 0:
                 W1 = np.zeros([N1, 2])
-                W1[0:N1, :] = W[ind + 1:ind + N1 + 1, :]
+                W1[0:N1, :] = W[ind + 1 : ind + N1 + 1, :]
                 ind = ind + N1
             else:
                 W1 = 0
@@ -190,10 +192,21 @@ class WakeTableDechirperOffAxis(WakeTable):
     :return: hor_wake_table, vert_wake_table
     """
 
-    def __init__(self, b=500 * 1e-6, a=0.01, width=0.02, t=0.25 * 1e-3, p=0.5 * 1e-3, length=1, sigma=30e-6,
-                 orient="horz"):
+    def __init__(
+        self,
+        b=500 * 1e-6,
+        a=0.01,
+        width=0.02,
+        t=0.25 * 1e-3,
+        p=0.5 * 1e-3,
+        length=1,
+        sigma=30e-6,
+        orient="horz",
+    ):
         WakeTable.__init__(self)
-        weke_horz, wake_vert = self.calculate_wake_tables(b=b, a=a, width=width, t=t, p=p, length=length, sigma=sigma)
+        weke_horz, wake_vert = self.calculate_wake_tables(
+            b=b, a=a, width=width, t=t, p=p, length=length, sigma=sigma
+        )
         if orient == "horz":
             self.TH = self.process_wake_table(weke_horz)
         else:
@@ -223,9 +236,9 @@ class WakeTableDechirperOffAxis(WakeTable):
         y0 = a - b  # in mm POSITION of the charge CHANGE ONLY THIS PARAMETER
         # now distance from the plate 500um = a-y0
         c = speed_of_light
-        Z0 = 3.767303134695850e+02
+        Z0 = 3.767303134695850e02
         y = y0
-        x0 = D / 2.
+        x0 = D / 2.0
         x = x0
         Nm = 300
         s = np.arange(0, 50 + 0.01, 0.01) * sigma
@@ -234,7 +247,7 @@ class WakeTableDechirperOffAxis(WakeTable):
         t2p = t / p
         alpha = 1 - 0.465 * np.sqrt(t2p) - 0.07 * t2p
         # s0r_fit=0.41*a**1.8*0.25^1.6/0.5^2.4;
-        s0r_bane = a * a * t / (2 * np.pi * alpha ** 2 * p ** 2)
+        s0r_bane = a * a * t / (2 * np.pi * alpha**2 * p**2)
         s0r_igor = s0r_bane * np.pi / 4
         s0 = 4 * s0r_igor
 
@@ -261,31 +274,44 @@ class WakeTableDechirperOffAxis(WakeTable):
             X = M * a
             dx = np.sin(M * x0) * np.sin(M * x)
             # to avoid overflow
-            coeff = X / (np.cosh(X) * np.sinh(X)) if X < 350. else 0.
-            Wcc = A * coeff * np.exp(-(s / s0) ** 0.5 * (X / np.tanh(X)))
-            Wss = A * coeff * np.exp(-(s / s0) ** 0.5 * (X * np.tanh(X)))
+            coeff = X / (np.cosh(X) * np.sinh(X)) if X < 350.0 else 0.0
+            Wcc = A * coeff * np.exp(-((s / s0) ** 0.5) * (X / np.tanh(X)))
+            Wss = A * coeff * np.exp(-((s / s0) ** 0.5) * (X * np.tanh(X)))
 
-            Fz[i, :] = Wcc * np.cosh(M * y) * np.cosh(M * y0) + Wss * np.sinh(M * y) * np.sinh(M * y0)
+            Fz[i, :] = Wcc * np.cosh(M * y) * np.cosh(M * y0) + Wss * np.sinh(
+                M * y
+            ) * np.sinh(M * y0)
 
             dW = Fz[i, :] * dx
             W = W + dW
             ddx0 = np.cos(M * x0) * np.sin(M * x)
             dWdx0 = dWdx0 + M * Fz[i, :] * ddx0
-            ddy0 = Wcc * np.cosh(M * y) * np.sinh(M * y0) + Wss * np.sinh(M * y) * np.cosh(M * y0)
+            ddy0 = Wcc * np.cosh(M * y) * np.sinh(M * y0) + Wss * np.sinh(
+                M * y
+            ) * np.cosh(M * y0)
             dWdy0 = dWdy0 + M * ddy0 * dx
             ddx = np.sin(M * x0) * np.cos(M * x)
             dWdx = dWdx + M * Fz[i, :] * ddx
-            ddy = Wcc * np.sinh(M * y) * np.cosh(M * y0) + Wss * np.cosh(M * y) * np.sinh(M * y0)
+            ddy = Wcc * np.sinh(M * y) * np.cosh(M * y0) + Wss * np.cosh(
+                M * y
+            ) * np.sinh(M * y0)
             dWdy = dWdy + M * ddy * dx
             Fyd[i, :] = M * ddy * dx
-            ddWdx0dx0 = ddWdx0dx0 - M ** 2 * dW
-            ddWdy0dx0 = ddWdy0dx0 + M ** 2 * (ddy0 * ddx0)
-            ddWdxdx0 = ddWdxdx0 + M ** 2 * Fz[i, :] * np.cos(M * x0) * np.cos(M * x)
-            ddWdxdy0 = ddWdxdy0 + M ** 2 * ddy0 * ddx
-            ddWdydx0 = ddWdydx0 + M ** 2 * ddy * ddx0
-            ddWdydy0 = ddWdydy0 + M ** 2 * (
-                    Wcc * np.sinh(M * y) * np.sinh(M * y0) + Wss * np.cosh(M * y) * np.cosh(M * y0)) * dx
-            ddWdydx = ddWdydx + M ** 2 * ddy * ddx
+            ddWdx0dx0 = ddWdx0dx0 - M**2 * dW
+            ddWdy0dx0 = ddWdy0dx0 + M**2 * (ddy0 * ddx0)
+            ddWdxdx0 = ddWdxdx0 + M**2 * Fz[i, :] * np.cos(M * x0) * np.cos(M * x)
+            ddWdxdy0 = ddWdxdy0 + M**2 * ddy0 * ddx
+            ddWdydx0 = ddWdydx0 + M**2 * ddy * ddx0
+            ddWdydy0 = (
+                ddWdydy0
+                + M**2
+                * (
+                    Wcc * np.sinh(M * y) * np.sinh(M * y0)
+                    + Wss * np.cosh(M * y) * np.cosh(M * y0)
+                )
+                * dx
+            )
+            ddWdydx = ddWdydx + M**2 * ddy * ddx
 
         W = W * 2 / D * 1e6
         h00 = W
@@ -322,7 +348,9 @@ class WakeTableDechirperOffAxis(WakeTable):
         out13 = np.append([[N, 0], [0, 0], [0, 13]], np.vstack((s, h13)).T, axis=0)
         out24 = np.append([[N, 0], [0, 0], [0, 24]], np.vstack((s, h24)).T, axis=0)
         out33 = np.append([[N, 0], [0, 0], [0, 33]], np.vstack((s, h33)).T, axis=0)
-        wake_horz = np.vstack(([[7, 0]], out00, out02, out04, out11, out13, out24, out33))
+        wake_horz = np.vstack(
+            ([[7, 0]], out00, out02, out04, out11, out13, out24, out33)
+        )
 
         out11 = np.append([[N, 0], [0, 0], [0, 11]], np.vstack((s, -h11)).T, axis=0)
         out33 = np.append([[N, 0], [0, 0], [0, 33]], np.vstack((s, -h33)).T, axis=0)
@@ -330,7 +358,9 @@ class WakeTableDechirperOffAxis(WakeTable):
         out03 = np.append([[N, 0], [0, 0], [0, 3]], np.vstack((s, h04)).T, axis=0)
         out13 = np.append([[N, 0], [0, 0], [0, 13]], np.vstack((s, h24)).T, axis=0)
         out24 = np.append([[N, 0], [0, 0], [0, 24]], np.vstack((s, h13)).T, axis=0)
-        wake_vert = np.vstack(([[7, 0]], out00, out01, out03, out11, out13, out24, out33))
+        wake_vert = np.vstack(
+            ([[7, 0]], out00, out01, out03, out11, out13, out24, out33)
+        )
         return wake_horz, wake_vert
 
 
@@ -358,7 +388,7 @@ class Wake(PhysProc):
         self.filter_order = 20  # smoothing filter order
         # self.wake_file = ""
         self.wake_table = None
-        self.factor = 1.
+        self.factor = 1.0
         self.step = step
         self.TH = None
 
@@ -418,8 +448,8 @@ class Wake(PhysProc):
         T, H = TH
         c = speed_of_light
         Np = X.shape[0]
-        X2 = X ** 2
-        Y2 = Y ** 2
+        X2 = X**2
+        Y2 = Y**2
         XY = X * Y
         # generalized currents;
         I00 = s2current(Z, q, Ns, NF, c)
@@ -507,7 +537,7 @@ class Wake(PhysProc):
             p = np.interp(Z, x, Wx, 0, 0)
             Px = Px + p * X
             Py = Py - p * Y
-        I00[:, 0] = - I00[:, 0]
+        I00[:, 0] = -I00[:, 0]
         # Z=-Z
         return Px, Py, Pz, I00
 
@@ -532,8 +562,15 @@ class Wake(PhysProc):
         _logger.debug(" Wake: apply: dz = " + str(dz))
 
         ps = p_array.rparticles
-        Px, Py, Pz, I00 = self.add_total_wake(ps[0], ps[2], ps[4], p_array.q_array, self.TH,
-                                              self.w_sampling, self.filter_order)
+        Px, Py, Pz, I00 = self.add_total_wake(
+            ps[0],
+            ps[2],
+            ps[4],
+            p_array.q_array,
+            self.TH,
+            self.w_sampling,
+            self.filter_order,
+        )
 
         L = self.s_stop - self.s_start
         if L == 0:
@@ -541,9 +578,15 @@ class Wake(PhysProc):
         else:
             dz = dz / L
 
-        p_array.rparticles[5] = p_array.rparticles[5] + Pz * dz * self.factor / (p_array.E * 1e9)
-        p_array.rparticles[3] = p_array.rparticles[3] + Py * dz * self.factor / (p_array.E * 1e9)
-        p_array.rparticles[1] = p_array.rparticles[1] + Px * dz * self.factor / (p_array.E * 1e9)
+        p_array.rparticles[5] = p_array.rparticles[5] + Pz * dz * self.factor / (
+            p_array.E * 1e9
+        )
+        p_array.rparticles[3] = p_array.rparticles[3] + Py * dz * self.factor / (
+            p_array.E * 1e9
+        )
+        p_array.rparticles[1] = p_array.rparticles[1] + Px * dz * self.factor / (
+            p_array.E * 1e9
+        )
 
 
 class WakeKick(Wake):
@@ -555,9 +598,22 @@ class WakeKick(Wake):
     def apply(self, p_array, dz):
         _logger.debug(" WakeKick: apply")
         ps = p_array.rparticles
-        Px, Py, Pz, I00 = self.add_total_wake(ps[0], ps[2], ps[4], p_array.q_array, self.TH, self.w_sampling,
-                                              self.filter_order)
+        Px, Py, Pz, I00 = self.add_total_wake(
+            ps[0],
+            ps[2],
+            ps[4],
+            p_array.q_array,
+            self.TH,
+            self.w_sampling,
+            self.filter_order,
+        )
 
-        p_array.rparticles[5] = p_array.rparticles[5] + self.factor * Pz / (p_array.E * 1e9)
-        p_array.rparticles[3] = p_array.rparticles[3] + self.factor * Py / (p_array.E * 1e9)
-        p_array.rparticles[1] = p_array.rparticles[1] + self.factor * Px / (p_array.E * 1e9)
+        p_array.rparticles[5] = p_array.rparticles[5] + self.factor * Pz / (
+            p_array.E * 1e9
+        )
+        p_array.rparticles[3] = p_array.rparticles[3] + self.factor * Py / (
+            p_array.E * 1e9
+        )
+        p_array.rparticles[1] = p_array.rparticles[1] + self.factor * Px / (
+            p_array.E * 1e9
+        )

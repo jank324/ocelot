@@ -1,22 +1,32 @@
 from __future__ import annotations
-__author__ = 'Sergey Tomin'
 
-from typing import List, Dict, Type, Callable, Tuple, Union, Any
+__author__ = "Sergey Tomin"
+
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
+
 import numpy as np
 from scipy.integrate import simps
+
 from ocelot.common.globals import speed_of_light
-from ocelot.cpbd.beam import s_to_cur
-from ocelot.cpbd.beam import Twiss
+from ocelot.cpbd.beam import Twiss, s_to_cur
 
 
 def RTU_56(LB, LD, r, m):
     LB2 = LB * LB
     r2 = r * r
     K = np.sqrt(1 - LB2 / r2)
-    r56 = m * r * np.arcsin(LB / r) - m * LB / K - 2 * LB2 * LD / (K ** 3 * r2) if r != np.inf else m * LB - m * LB / K
+    r56 = (
+        m * r * np.arcsin(LB / r) - m * LB / K - 2 * LB2 * LD / (K**3 * r2)
+        if r != np.inf
+        else m * LB - m * LB / K
+    )
 
-    t566 = (r2 * LB2 * (6 * LD + m * LB) - m * LB ** 5) / (2 * K * (LB2 - r2) ** 2)
-    p1 = m * LB ** 7 - LB ** 4 * (5 * m * LB - 6 * LD) * r2 + 4 * LB2 * (6 * LD + m * LB) * r ** 4
+    t566 = (r2 * LB2 * (6 * LD + m * LB) - m * LB**5) / (2 * K * (LB2 - r2) ** 2)
+    p1 = (
+        m * LB**7
+        - LB**4 * (5 * m * LB - 6 * LD) * r2
+        + 4 * LB2 * (6 * LD + m * LB) * r**4
+    )
     p2 = 6 * K * (LB2 - r2) ** 3
     u5666 = p1 / p2
     Sref = m * r * np.arcsin(LB / r) + 2 * LD / np.cos(np.arcsin(LB / r))
@@ -33,16 +43,21 @@ def chicane_RTU(yoke_len, dip_dist, r, type):
     :param type: type of the chicane "s" or "c"
     :return: R56, T566, U5666, Sref (distance between magnet 2 and 3 is 0)
     """
-    dx = lambda r, LB: np.sqrt(1 - LB ** 2 / r ** 2) * r * (r - np.sqrt(r ** 2 - LB ** 2)) / LB
+    dx = (
+        lambda r, LB: np.sqrt(1 - LB**2 / r**2)
+        * r
+        * (r - np.sqrt(r**2 - LB**2))
+        / LB
+    )
     r56 = 0
     t566 = 0
     u5666 = 0
     Sref = 0
 
-    if type == 'c':
+    if type == "c":
         r56, t566, u5666, Sref = RTU_56(yoke_len, dip_dist, r, 4)
 
-    elif type == 's':
+    elif type == "s":
         r56, t566, u5666, Sref = RTU_56(yoke_len, 2 * dip_dist + dx(r, yoke_len), r, 6)
     else:
         print("Unknown chicane type. Use 'c' or 's'. ")
@@ -61,12 +76,18 @@ def bunching(p_array, lambda_mod, smooth_sigma=None):
     :return: bunching factor
     """
     if smooth_sigma is None:
-        smooth_sigma = min(np.std(p_array.tau())*0.01, lambda_mod*0.1)
+        smooth_sigma = min(np.std(p_array.tau()) * 0.01, lambda_mod * 0.1)
 
-    B = s_to_cur(p_array.tau(), sigma=smooth_sigma, q0=np.sum(p_array.q_array), v=speed_of_light)
+    B = s_to_cur(
+        p_array.tau(), sigma=smooth_sigma, q0=np.sum(p_array.q_array), v=speed_of_light
+    )
 
-    b = np.abs(simps(B[:, 1] / speed_of_light * np.exp(-1j * 2 * np.pi / lambda_mod * B[:, 0]), B[:, 0])) / np.sum(
-        p_array.q_array)
+    b = np.abs(
+        simps(
+            B[:, 1] / speed_of_light * np.exp(-1j * 2 * np.pi / lambda_mod * B[:, 0]),
+            B[:, 0],
+        )
+    ) / np.sum(p_array.q_array)
     return b
 
 
@@ -82,15 +103,27 @@ def slice_bunching(tau, charge, lambda_mod, smooth_sigma=None):
     :return: bunching factor
     """
     if smooth_sigma is None:
-        smooth_sigma = lambda_mod/10.
+        smooth_sigma = lambda_mod / 10.0
 
     B = s_to_cur(tau, sigma=smooth_sigma, q0=charge, v=speed_of_light)
 
-    b = np.abs(simps(B[:, 1] / speed_of_light * np.exp(-1j * 2 * np.pi / lambda_mod * B[:, 0]), B[:, 0])) / charge
+    b = (
+        np.abs(
+            simps(
+                B[:, 1]
+                / speed_of_light
+                * np.exp(-1j * 2 * np.pi / lambda_mod * B[:, 0]),
+                B[:, 0],
+            )
+        )
+        / charge
+    )
     return b
 
 
-def calculate_BMAG(tws_des: Twiss, tws_err: Twiss) -> tuple[Union[float, Any], Union[float, Any]]:
+def calculate_BMAG(
+    tws_des: Twiss, tws_err: Twiss
+) -> tuple[Union[float, Any], Union[float, Any]]:
     """
     Function calculates mismatch and mismatch phase using two twiss lists.
     Result is saved in tws_err list as M_x, M_y, psi_x, psi_y
@@ -103,8 +136,16 @@ def calculate_BMAG(tws_des: Twiss, tws_err: Twiss) -> tuple[Union[float, Any], U
     gamma_y_des = (1 + tws_des.alpha_y * tws_des.alpha_y) / tws_des.beta_y
     gamma_x_err = (1 + tws_err.alpha_x * tws_err.alpha_x) / tws_err.beta_x
     gamma_y_err = (1 + tws_err.alpha_y * tws_err.alpha_y) / tws_err.beta_y
-    mp_x = 0.5 * (tws_err.beta_x * gamma_x_des - 2 * tws_err.alpha_x * tws_des.alpha_x + tws_des.beta_x * gamma_x_err)
-    mp_y = 0.5 * (tws_err.beta_y * gamma_y_des - 2 * tws_err.alpha_y * tws_des.alpha_y + tws_des.beta_y * gamma_y_err)
+    mp_x = 0.5 * (
+        tws_err.beta_x * gamma_x_des
+        - 2 * tws_err.alpha_x * tws_des.alpha_x
+        + tws_des.beta_x * gamma_x_err
+    )
+    mp_y = 0.5 * (
+        tws_err.beta_y * gamma_y_des
+        - 2 * tws_err.alpha_y * tws_des.alpha_y
+        + tws_des.beta_y * gamma_y_err
+    )
     lam_x = mp_x + np.sqrt(mp_x * mp_x - 1)
     lam_y = mp_y + np.sqrt(mp_y * mp_y - 1)
     return lam_x, lam_y
@@ -122,15 +163,23 @@ def calculate_mismatch(tws_des, tws_err):
     if len(tws_des) != len(tws_err):
         raise Exception("length of the twiss lists must be the same")
 
-    Sigma = lambda tws: np.array([[tws.beta_x, -tws.alpha_x, 0, 0],
-                                  [-tws.alpha_x, tws.gamma_x, 0, 0],
-                                  [0, 0, tws.beta_y, -tws.alpha_y],
-                                  [0, 0, -tws.alpha_y, tws.gamma_y]])
+    Sigma = lambda tws: np.array(
+        [
+            [tws.beta_x, -tws.alpha_x, 0, 0],
+            [-tws.alpha_x, tws.gamma_x, 0, 0],
+            [0, 0, tws.beta_y, -tws.alpha_y],
+            [0, 0, -tws.alpha_y, tws.gamma_y],
+        ]
+    )
 
-    S = lambda tws: np.array([[1 / np.sqrt(tws.beta_x), 0, 0, 0],
-                              [tws.alpha_x / np.sqrt(tws.beta_x), np.sqrt(tws.beta_x), 0, 0],
-                              [0, 0, 1 / np.sqrt(tws.beta_y), 0],
-                              [0, 0, tws.alpha_y / np.sqrt(tws.beta_y), np.sqrt(tws.beta_y)]])
+    S = lambda tws: np.array(
+        [
+            [1 / np.sqrt(tws.beta_x), 0, 0, 0],
+            [tws.alpha_x / np.sqrt(tws.beta_x), np.sqrt(tws.beta_x), 0, 0],
+            [0, 0, 1 / np.sqrt(tws.beta_y), 0],
+            [0, 0, tws.alpha_y / np.sqrt(tws.beta_y), np.sqrt(tws.beta_y)],
+        ]
+    )
 
     for i in range(len(tws_des)):
         tws_e = tws_err[i]
@@ -138,36 +187,37 @@ def calculate_mismatch(tws_des, tws_err):
 
         s = S(tws_m)
         Sigma_b = np.dot(np.dot(s, Sigma(tws_e)), s.T)
-        bx, gx, ax = Sigma_b[0,0], Sigma_b[1,1], -Sigma_b[0,1]
+        bx, gx, ax = Sigma_b[0, 0], Sigma_b[1, 1], -Sigma_b[0, 1]
         by, gy, ay = Sigma_b[2, 2], Sigma_b[3, 3], -Sigma_b[2, 3]
         if bx + gx < 2:
             tws_err[i].M_x = 1
         else:
-            tws_err[i].M_x = 0.5*(bx + gx + np.sqrt((bx + gx)**2 - 4))
-
+            tws_err[i].M_x = 0.5 * (bx + gx + np.sqrt((bx + gx) ** 2 - 4))
 
         if by + gy < 2:
             tws_err[i].M_y = 1
         else:
-            tws_err[i].M_y = 0.5*(by + gy + np.sqrt((by + gy)**2 - 4))
+            tws_err[i].M_y = 0.5 * (by + gy + np.sqrt((by + gy) ** 2 - 4))
 
-        theta = np.arctan2(-2*ax, bx-gx)/2
+        theta = np.arctan2(-2 * ax, bx - gx) / 2
 
         if tws_err[i].M_x > 1.05:
-            tws_err[i].psi_x = (theta + tws_m.mux)%(np.pi)*180/np.pi - 90
+            tws_err[i].psi_x = (theta + tws_m.mux) % (np.pi) * 180 / np.pi - 90
         else:
             tws_err[i].psi_x = 0
 
-        thetay = np.arctan2(-2*ay, by-gy)/2
+        thetay = np.arctan2(-2 * ay, by - gy) / 2
         if tws_err[i].M_y > 1.05:
-            tws_err[i].psi_y = (thetay + tws_m.muy)%(np.pi)*180/np.pi - 90
+            tws_err[i].psi_y = (thetay + tws_m.muy) % (np.pi) * 180 / np.pi - 90
         else:
-            tws_err[i].psi_y = (0)
+            tws_err[i].psi_y = 0
 
     return tws_err[-1].M_x, tws_err[-1].M_y, tws_err[-1].psi_x, tws_err[-1].psi_y
 
 
-def rf2beam(v1, phi1, vh, phih, n=3, freq=1.3e9, E0=0.00675, zeta1=0., zeta2=0., zeta3=0.):
+def rf2beam(
+    v1, phi1, vh, phih, n=3, freq=1.3e9, E0=0.00675, zeta1=0.0, zeta2=0.0, zeta3=0.0
+):
     """
     Function calculates beam parameters: the final beam energy, chirp, curvature, skewness,
     from the RF parameters: voltages and phases.
@@ -188,22 +238,28 @@ def rf2beam(v1, phi1, vh, phih, n=3, freq=1.3e9, E0=0.00675, zeta1=0., zeta2=0.,
     k = 2 * np.pi * freq / speed_of_light
     deg2rad = np.pi / 180
 
-    M = np.array([[1, 0, 1, 0],
-                  [0, -k, 0, -(n * k)],
-                  [-k ** 2, 0, -(n * k) ** 2, 0],
-                  [0, k ** 3, 0, (n * k) ** 3]])
+    M = np.array(
+        [
+            [1, 0, 1, 0],
+            [0, -k, 0, -(n * k)],
+            [-(k**2), 0, -((n * k) ** 2), 0],
+            [0, k**3, 0, (n * k) ** 3],
+        ]
+    )
 
-    V = np.array([v1 * np.cos(phi1 * deg2rad),
-                  v1 * np.sin(phi1 * deg2rad),
-                  vh * np.cos(phih * deg2rad),
-                  vh * np.sin(phih * deg2rad)]).T
+    V = np.array(
+        [
+            v1 * np.cos(phi1 * deg2rad),
+            v1 * np.sin(phi1 * deg2rad),
+            vh * np.cos(phih * deg2rad),
+            vh * np.sin(phih * deg2rad),
+        ]
+    ).T
 
     if n == 0:
-        M = np.array([[1, 0],
-                      [0, -k]])
+        M = np.array([[1, 0], [0, -k]])
 
-        V = np.array([v1 * np.cos(phi1 * deg2rad),
-                      v1 * np.sin(phi1 * deg2rad)]).T
+        V = np.array([v1 * np.cos(phi1 * deg2rad), v1 * np.sin(phi1 * deg2rad)]).T
     R = np.dot(M, V)
     E1 = E0 + R[0]
     chirp = (R[1] + E0 * zeta1) / E1
@@ -217,7 +273,9 @@ def rf2beam(v1, phi1, vh, phih, n=3, freq=1.3e9, E0=0.00675, zeta1=0., zeta2=0.,
     return E1, chirp, curvature, skewness
 
 
-def beam2rf(E1, chirp, curvature, skewness, n, freq, E0=0.00675, zeta1=0., zeta2=0., zeta3=0.):
+def beam2rf(
+    E1, chirp, curvature, skewness, n, freq, E0=0.00675, zeta1=0.0, zeta2=0.0, zeta3=0.0
+):
     """
     Function calculates RF parameters: cavities (first and high harmonic) voltage [GV] and phase [deg]
     from the final beam energy, chirp, curvature, skewness.
@@ -236,23 +294,32 @@ def beam2rf(E1, chirp, curvature, skewness, n, freq, E0=0.00675, zeta1=0., zeta2
     """
 
     k = 2 * np.pi * freq / speed_of_light
-    M = np.array([[1, 0, 1, 0],
-                  [0, -k, 0, -(n * k)],
-                  [-k ** 2, 0, -(n * k) ** 2, 0],
-                  [0, k ** 3, 0, (n * k) ** 3]])
+    M = np.array(
+        [
+            [1, 0, 1, 0],
+            [0, -k, 0, -(n * k)],
+            [-(k**2), 0, -((n * k) ** 2), 0],
+            [0, k**3, 0, (n * k) ** 3],
+        ]
+    )
 
-    r = np.array([E1 - E0, chirp * E1 - E0 * zeta1, curvature * E1 - E0 * zeta2 / 2, skewness * E1 - E0 * zeta3 / 6])
+    r = np.array(
+        [
+            E1 - E0,
+            chirp * E1 - E0 * zeta1,
+            curvature * E1 - E0 * zeta2 / 2,
+            skewness * E1 - E0 * zeta3 / 6,
+        ]
+    )
 
     if n == 0:
-        M = np.array([[1, 0],
-                      [0, -k]])
-        r = np.array(
-            [E1 - E0, chirp * E1 - E0 * zeta1])
+        M = np.array([[1, 0], [0, -k]])
+        r = np.array([E1 - E0, chirp * E1 - E0 * zeta1])
     rf = np.dot(np.linalg.inv(M), r)
     X1 = rf[0]
     Y1 = rf[1]
     rad2deg = 180 / np.pi
-    v1 = np.sqrt(X1 ** 2 + Y1 ** 2)
+    v1 = np.sqrt(X1**2 + Y1**2)
     phi1 = (np.arctan(Y1 / X1) + np.pi / 2 * (1 - np.sign(X1))) * rad2deg
 
     if n == 0:
@@ -260,7 +327,7 @@ def beam2rf(E1, chirp, curvature, skewness, n, freq, E0=0.00675, zeta1=0., zeta2
 
     X13 = rf[2]
     Y13 = rf[3]
-    vh = np.sqrt(X13 ** 2 + Y13 ** 2)
+    vh = np.sqrt(X13**2 + Y13**2)
     phih = (np.arctan(Y13 / X13) + np.pi / 2 * (1 - np.sign(X13)) - 2 * np.pi) * rad2deg
     return v1, phi1, vh, phih
 
@@ -274,8 +341,18 @@ def beam2rf_xfel_linac(sum_voltage, chirp, init_energy=0.13):
     :param init_energy: for L1 it is 0.13 GeV, L2 = 0.7 GeV
     :return: v1, phi1
     """
-    v1, phi1, _, _ = beam2rf(sum_voltage + init_energy, chirp, curvature=0, skewness=0, n=0, freq=1.3e9,
-                             E0=init_energy, zeta1=0., zeta2=0., zeta3=0.)
+    v1, phi1, _, _ = beam2rf(
+        sum_voltage + init_energy,
+        chirp,
+        curvature=0,
+        skewness=0,
+        n=0,
+        freq=1.3e9,
+        E0=init_energy,
+        zeta1=0.0,
+        zeta2=0.0,
+        zeta3=0.0,
+    )
     return v1, phi1
 
 
@@ -288,7 +365,17 @@ def rf2beam_xfel_linac(v, phi, init_energy=0.13):
     :param init_energy: for L1 it is 0.13 GeV, L2 = 0.7 GeV
     :return:
     """
-    E1, chirp, _, _ = rf2beam(v, phi, vh=0, phih=0, n=0, freq=1.3e9, E0=init_energy, zeta1=0., zeta2=0., zeta3=0.)
+    E1, chirp, _, _ = rf2beam(
+        v,
+        phi,
+        vh=0,
+        phih=0,
+        n=0,
+        freq=1.3e9,
+        E0=init_energy,
+        zeta1=0.0,
+        zeta2=0.0,
+        zeta3=0.0,
+    )
     sum_voltage = E1 - init_energy
     return sum_voltage, chirp
-

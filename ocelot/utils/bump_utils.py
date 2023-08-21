@@ -2,18 +2,26 @@
 Utils for creating closed bumps in both planes and convert the correctors to dipoles
 S.Tomin, DESY, 11.2020
 """
-from typing import Union, List
-import numpy as np
 import copy
-from ocelot.cpbd.elements import Element, Monitor, Marker, Hcor, Vcor, Bend
+from typing import List, Union
+
+import numpy as np
+
+from ocelot.cpbd.beam import Particle
+from ocelot.cpbd.elements import Bend, Element, Hcor, Marker, Monitor, Vcor
 from ocelot.cpbd.magnetic_lattice import MagneticLattice
 from ocelot.cpbd.optics import lattice_transfer_map
-from ocelot.cpbd.beam import Particle
 from ocelot.cpbd.track import lattice_track
 
 
-def bump_4cors(lat: MagneticLattice, cor_list: List[Element], marker: Union[Marker, Monitor],
-                    x: float = 0.0001, xp: float = 0., energy: float = 14.) -> np.array:
+def bump_4cors(
+    lat: MagneticLattice,
+    cor_list: List[Element],
+    marker: Union[Marker, Monitor],
+    x: float = 0.0001,
+    xp: float = 0.0,
+    energy: float = 14.0,
+) -> np.array:
     """
     Bump with 4 correctors.
     Function calculates correctors angles (strength) to make closed bump with (x, x') or (y, y') at the marker position.
@@ -44,8 +52,8 @@ def bump_4cors(lat: MagneticLattice, cor_list: List[Element], marker: Union[Mark
         sequence = lat.get_sequence_part(start=sorted_list[i], stop=sorted_list[i + 1])
         len_a = sequence[0].l
         len_b = sequence[-1].l
-        sequence[0].l /= 2.
-        sequence[-1].l /= 2.
+        sequence[0].l /= 2.0
+        sequence[-1].l /= 2.0
         lat1 = MagneticLattice(sequence, method=lat.method)
         R1 = lattice_transfer_map(lat1, energy)
         Rs.append(R1)
@@ -54,8 +62,12 @@ def bump_4cors(lat: MagneticLattice, cor_list: List[Element], marker: Union[Mark
 
     R21 = np.dot(Rs[1], Rs[0])
 
-    M = np.array([[R21[x_idx, xp_idx], Rs[1][x_idx, xp_idx]],
-                  [R21[xp_idx, xp_idx], Rs[1][xp_idx, xp_idx]]])
+    M = np.array(
+        [
+            [R21[x_idx, xp_idx], Rs[1][x_idx, xp_idx]],
+            [R21[xp_idx, xp_idx], Rs[1][xp_idx, xp_idx]],
+        ]
+    )
 
     Minv = np.linalg.inv(M)
     X = np.array([x, xp])
@@ -64,10 +76,14 @@ def bump_4cors(lat: MagneticLattice, cor_list: List[Element], marker: Union[Mark
 
     R43 = np.dot(Rs[3], Rs[2])
 
-    Xf = np.array([0., 0.])
+    Xf = np.array([0.0, 0.0])
 
-    M43 = np.array([[R43[x_idx, x_idx], R43[x_idx, xp_idx]],
-                    [R43[xp_idx, x_idx], R43[xp_idx, xp_idx]]])
+    M43 = np.array(
+        [
+            [R43[x_idx, x_idx], R43[x_idx, xp_idx]],
+            [R43[xp_idx, x_idx], R43[xp_idx, xp_idx]],
+        ]
+    )
     X4 = np.dot(M43, X)
     angle_3 = (Xf[0] - X4[0]) / Rs[3][x_idx, xp_idx]
     angle_4 = -(X4[1] + Rs[3][xp_idx, xp_idx] * angle_3 - Xf[1])
@@ -77,7 +93,9 @@ def bump_4cors(lat: MagneticLattice, cor_list: List[Element], marker: Union[Mark
     return a
 
 
-def convert_cors2dipoles(lat: MagneticLattice, cor_list: List[Element], energy: float = 10.) -> MagneticLattice:
+def convert_cors2dipoles(
+    lat: MagneticLattice, cor_list: List[Element], energy: float = 10.0
+) -> MagneticLattice:
     """
     Function converts correctors with non zero angles to dipoles
 
@@ -92,7 +110,7 @@ def convert_cors2dipoles(lat: MagneticLattice, cor_list: List[Element], energy: 
     splist = np.array([p.s for p in plist])
 
     # calculate edge positions for all elements
-    L = 0.
+    L = 0.0
     for elem in lat.sequence:
         elem.s0 = L
         L += elem.l
@@ -105,14 +123,23 @@ def convert_cors2dipoles(lat: MagneticLattice, cor_list: List[Element], energy: 
         ins1 = [np.argmin(np.abs(splist - sbpm)) for sbpm in scor]
         if isinstance(corr, Hcor):
             p_str = "px"
-            tilt = 0.
+            tilt = 0.0
         else:
             p_str = "py"
-            tilt = np.pi/2
+            tilt = np.pi / 2
         edges = []
         for i in range(2):
             edges.append(plist[ins1[i]].__dict__[p_str])
-        dipoles.append(Bend(l=corr.l, angle=corr.angle, e1=edges[0], e2=edges[1], tilt=tilt, eid=corr.id))
+        dipoles.append(
+            Bend(
+                l=corr.l,
+                angle=corr.angle,
+                e1=edges[0],
+                e2=edges[1],
+                tilt=tilt,
+                eid=corr.id,
+            )
+        )
 
     # create new sequence with substituted correctors by dipoles
     seq = []

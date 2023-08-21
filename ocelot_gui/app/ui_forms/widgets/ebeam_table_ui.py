@@ -8,11 +8,14 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Ebeam_Table(object):
     def setupUi(self, Ebeam_Table):
         Ebeam_Table.setObjectName("Ebeam_Table")
         Ebeam_Table.resize(700, 500)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Ebeam_Table.sizePolicy().hasHeightForWidth())
@@ -20,7 +23,9 @@ class Ui_Ebeam_Table(object):
         self.gridLayout_2 = QtWidgets.QGridLayout(Ebeam_Table)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.table = QtWidgets.QTableWidget(Ebeam_Table)
-        self.table.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
+        self.table.setLocale(
+            QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
+        )
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table.setRowCount(0)
         self.table.setColumnCount(2)
@@ -48,10 +53,10 @@ class Ui_Ebeam_Table(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Ebeam_Table = QtWidgets.QWidget()
     ui = Ui_Ebeam_Table()
     ui.setupUi(Ebeam_Table)
     Ebeam_Table.show()
     sys.exit(app.exec_())
-

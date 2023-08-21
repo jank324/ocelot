@@ -5,49 +5,54 @@ Revision on 01.06.2017: coordinate transform to the velocity direction
 2019: Added LSC: S. Tomin and I. Zagorodnov
 """
 
-import scipy.ndimage as ndimage
-import time
-from ocelot.common.globals import *
-from ocelot.cpbd.coord_transform import *
-from scipy import interpolate
+import logging
 import multiprocessing
+import time
+
+import scipy.ndimage as ndimage
+from scipy import interpolate
 from scipy.special import exp1, k1
-from ocelot.cpbd.physics_proc import PhysProc
+
+from ocelot.common import conf
+from ocelot.common.globals import *
 from ocelot.common.math_op import conj_sym
 from ocelot.cpbd.beam import s_to_cur
-from ocelot.common import conf
-import logging
+from ocelot.cpbd.coord_transform import *
+from ocelot.cpbd.physics_proc import PhysProc
 
 try:
     from scipy.special import factorial
 except:
-    from scipy.misc import factorial    # legacy support
+    from scipy.misc import factorial  # legacy support
 
 logger = logging.getLogger(__name__)
 
 try:
     pyfftw_flag = True
-    from pyfftw.interfaces.numpy_fft import fftn
-    from pyfftw.interfaces.numpy_fft import ifftn
     import pyfftw
+    from pyfftw.interfaces.numpy_fft import fftn, ifftn
 except:
     pyfftw_flag = False
-    logger.debug("cs.py: module PYFFTW is not installed. Install it to speed up calculation")
-    from numpy.fft import ifftn
-    from numpy.fft import fftn
+    logger.debug(
+        "cs.py: module PYFFTW is not installed. Install it to speed up calculation"
+    )
+    from numpy.fft import fftn, ifftn
 
 try:
     import numexpr as ne
+
     ne_flag = True
 except:
-    logger.debug("sc.py: module NUMEXPR is not installed. Install it to speed up calculation")
+    logger.debug(
+        "sc.py: module NUMEXPR is not installed. Install it to speed up calculation"
+    )
     ne_flag = False
 
-def smooth_z(Zin, mslice):
 
+def smooth_z(Zin, mslice):
     def myfunc(x, A):
-        if x < 2*A:
-            y = x - x*x/(4*A)
+        if x < 2 * A:
+            y = x - x * x / (4 * A)
         else:
             y = A
         return y
@@ -55,18 +60,18 @@ def smooth_z(Zin, mslice):
     inds = np.argsort(Zin, axis=0)
     Zout = np.sort(Zin, axis=0)
     N = Zin.shape[0]
-    S = np.zeros(N+1)
+    S = np.zeros(N + 1)
     S[N] = 0
     S[0] = 0
     for i in range(N):
-        S[i+1] = S[i] + Zout[i]
+        S[i + 1] = S[i] + Zout[i]
     Zout2 = np.zeros(N)
-    Zout2[N-1] = Zout[N-1]
+    Zout2[N - 1] = Zout[N - 1]
     Zout2[0] = Zout[0]
-    for i in range(1, N-1):
-        m = min(i, N-i+1)
-        m = np.floor(myfunc(0.5*m, 0.5*mslice) + 0.500001).astype(int)
-        Zout2[i] = (S[i+m+1] - S[i-m])/(2*m + 1)
+    for i in range(1, N - 1):
+        m = min(i, N - i + 1)
+        m = np.floor(myfunc(0.5 * m, 0.5 * mslice) + 0.500001).astype(int)
+        Zout2[i] = (S[i + m + 1] - S[i - m]) / (2 * m + 1)
     Zout[inds] = Zout2
     return Zout
 
@@ -87,9 +92,10 @@ class SpaceCharge(PhysProc):
     The convolution equation is solved with the help of the Fast Fourier Transform (FFT). The same algorithm for
     solution of the 3D Poisson equation is used, for example, in ASTRA
     """
+
     def __init__(self, step=1):
         PhysProc.__init__(self)
-        self.step = step # in unit step
+        self.step = step  # in unit step
         self.nmesh_xyz = [63, 63, 63]
         self.low_order_kick = True
 
@@ -97,7 +103,7 @@ class SpaceCharge(PhysProc):
         self.end_elem = None
         self.debug = False
         self.random_mesh = False  # random mesh if True
-        self.random_seed = 10     # random seeding number. if None seeding is random
+        self.random_seed = 10  # random seeding number. if None seeding is random
 
     def prepare(self, lat):
         if self.random_seed is not None:
@@ -110,22 +116,35 @@ class SpaceCharge(PhysProc):
         hx = hxyz[0]
         hy = hxyz[1]
         hz = hxyz[2]
-        x = hx*np.r_[0:i2+1] - hx/2
-        y = hy*np.r_[0:j2+1] - hy/2
-        z = hz*np.r_[0:k2+1] - hz/2
+        x = hx * np.r_[0 : i2 + 1] - hx / 2
+        y = hy * np.r_[0 : j2 + 1] - hy / 2
+        z = hz * np.r_[0 : k2 + 1] - hz / 2
         x, y, z = np.ix_(x, y, z)
-        r = np.sqrt(x*x + y*y + z*z)
+        r = np.sqrt(x * x + y * y + z * z)
         if ne_flag:
-            IG = ne.evaluate("(-x*x*0.5*arctan(y*z/(x*r)) + y*z*log(x+r) - y*y*0.5*arctan(z*x/(y*r)) + z*x*log(y+r) - z*z*0.5*arctan(x*y/(z*r)) + x*y*log(z+r))")
+            IG = ne.evaluate(
+                "(-x*x*0.5*arctan(y*z/(x*r)) + y*z*log(x+r) - y*y*0.5*arctan(z*x/(y*r)) + z*x*log(y+r) - z*z*0.5*arctan(x*y/(z*r)) + x*y*log(z+r))"
+            )
         else:
-            IG = (-x*x*0.5*np.arctan(y*z/(x*r)) + y*z*np.log(x+r)
-                  -y*y*0.5*np.arctan(z*x/(y*r)) + z*x*np.log(y+r)
-                  -z*z*0.5*np.arctan(x*y/(z*r)) + x*y*np.log(z+r))
+            IG = (
+                -x * x * 0.5 * np.arctan(y * z / (x * r))
+                + y * z * np.log(x + r)
+                - y * y * 0.5 * np.arctan(z * x / (y * r))
+                + z * x * np.log(y + r)
+                - z * z * 0.5 * np.arctan(x * y / (z * r))
+                + x * y * np.log(z + r)
+            )
 
-        kern = (IG[1:i2+1, 1:j2+1, 1:k2+1] - IG[0:i2, 1:j2+1, 1:k2+1]
-               -IG[1:i2+1, 0:j2, 1:k2+1] + IG[0:i2, 0:j2, 1:k2+1]
-               -IG[1:i2+1, 1:j2+1, 0:k2] + IG[0:i2, 1:j2+1, 0:k2]
-               +IG[1:i2+1, 0:j2, 0:k2] - IG[0:i2, 0:j2, 0:k2])
+        kern = (
+            IG[1 : i2 + 1, 1 : j2 + 1, 1 : k2 + 1]
+            - IG[0:i2, 1 : j2 + 1, 1 : k2 + 1]
+            - IG[1 : i2 + 1, 0:j2, 1 : k2 + 1]
+            + IG[0:i2, 0:j2, 1 : k2 + 1]
+            - IG[1 : i2 + 1, 1 : j2 + 1, 0:k2]
+            + IG[0:i2, 1 : j2 + 1, 0:k2]
+            + IG[1 : i2 + 1, 0:j2, 0:k2]
+            - IG[0:i2, 0:j2, 0:k2]
+        )
 
         return kern
 
@@ -136,32 +155,56 @@ class SpaceCharge(PhysProc):
         Nx = q.shape[0]
         Ny = q.shape[1]
         Nz = q.shape[2]
-        out = np.zeros((2*Nx-1, 2*Ny-1, 2*Nz-1))
+        out = np.zeros((2 * Nx - 1, 2 * Ny - 1, 2 * Nz - 1))
         out[:Nx, :Ny, :Nz] = q
         K1 = self.sym_kernel(q.shape, steps)
-        K2 = np.zeros((2*Nx-1, 2*Ny-1, 2*Nz-1))
+        K2 = np.zeros((2 * Nx - 1, 2 * Ny - 1, 2 * Nz - 1))
         K2[0:Nx, 0:Ny, 0:Nz] = K1
-        K2[0:Nx, 0:Ny, Nz:2*Nz-1] = K2[0:Nx, 0:Ny, Nz-1:0:-1] #z-mirror
-        K2[0:Nx, Ny:2*Ny-1,:] = K2[0:Nx, Ny-1:0:-1, :]        #y-mirror
-        K2[Nx:2*Nx-1, :, :] = K2[Nx-1:0:-1, :, :]             #x-mirror
+        K2[0:Nx, 0:Ny, Nz : 2 * Nz - 1] = K2[0:Nx, 0:Ny, Nz - 1 : 0 : -1]  # z-mirror
+        K2[0:Nx, Ny : 2 * Ny - 1, :] = K2[0:Nx, Ny - 1 : 0 : -1, :]  # y-mirror
+        K2[Nx : 2 * Nx - 1, :, :] = K2[Nx - 1 : 0 : -1, :, :]  # x-mirror
         t0 = time.time()
         if pyfftw_flag:
             nthreads = int(conf.OCELOT_NUM_THREADS)
             if nthreads < 1:
                 nthreads = 1
-            K2_fft = pyfftw.builders.fftn(K2, axes=None, overwrite_input=False, planner_effort='FFTW_ESTIMATE',
-                                       threads=nthreads, auto_align_input=False, auto_contiguous=False, avoid_copy=True)
-            out_fft = pyfftw.builders.fftn(out, axes=None, overwrite_input=False, planner_effort='FFTW_ESTIMATE',
-                                          threads=nthreads, auto_align_input=False, auto_contiguous=False, avoid_copy=True)
-            out_ifft = pyfftw.builders.ifftn(out_fft()*K2_fft(), axes=None, overwrite_input=False, planner_effort='FFTW_ESTIMATE',
-                                          threads=nthreads, auto_align_input=False, auto_contiguous=False, avoid_copy=True)
+            K2_fft = pyfftw.builders.fftn(
+                K2,
+                axes=None,
+                overwrite_input=False,
+                planner_effort="FFTW_ESTIMATE",
+                threads=nthreads,
+                auto_align_input=False,
+                auto_contiguous=False,
+                avoid_copy=True,
+            )
+            out_fft = pyfftw.builders.fftn(
+                out,
+                axes=None,
+                overwrite_input=False,
+                planner_effort="FFTW_ESTIMATE",
+                threads=nthreads,
+                auto_align_input=False,
+                auto_contiguous=False,
+                avoid_copy=True,
+            )
+            out_ifft = pyfftw.builders.ifftn(
+                out_fft() * K2_fft(),
+                axes=None,
+                overwrite_input=False,
+                planner_effort="FFTW_ESTIMATE",
+                threads=nthreads,
+                auto_align_input=False,
+                auto_contiguous=False,
+                avoid_copy=True,
+            )
             out = np.real(out_ifft())
 
         else:
-            out = np.real(ifftn(fftn(out)*fftn(K2)))
+            out = np.real(ifftn(fftn(out) * fftn(K2)))
         t1 = time.time()
-        logger.debug('fft time:' + str(t1-t0) + ' sec')
-        out[:Nx, :Ny, :Nz] = out[:Nx,:Ny,:Nz]/(4*pi*epsilon_0*hx*hy*hz)
+        logger.debug("fft time:" + str(t1 - t0) + " sec")
+        out[:Nx, :Ny, :Nz] = out[:Nx, :Ny, :Nz] / (4 * pi * epsilon_0 * hx * hy * hz)
         return out[:Nx, :Ny, :Nz]
 
     def el_field(self, X, Q, gamma, nxyz):
@@ -170,7 +213,7 @@ class SpaceCharge(PhysProc):
         XX = np.max(X, axis=0) - np.min(X, axis=0)
         if self.random_mesh:
             XX = XX * np.random.uniform(low=1, high=1.1)
-        logger.debug('mesh steps:' + str(XX))
+        logger.debug("mesh steps:" + str(XX))
         # here we use a fast 3D "near-point" interpolation
         # we need a stand-alone module with 1D,2D,3D parricles-to-grid functions
         steps = XX / (nxyz - 3)
@@ -192,15 +235,26 @@ class SpaceCharge(PhysProc):
         Ex = np.zeros(p.shape)
         Ey = np.zeros(p.shape)
         Ez = np.zeros(p.shape)
-        Ex[:nx - 1, :, :] = (p[:nx - 1, :, :] - p[1:nx, :, :]) / steps[0]
-        Ey[:, :ny - 1, :] = (p[:, :ny - 1, :] - p[:, 1:ny, :]) / steps[1]
-        Ez[:, :, :nz - 1] = (p[:, :, :nz - 1] - p[:, :, 1:nz]) / steps[2]
+        Ex[: nx - 1, :, :] = (p[: nx - 1, :, :] - p[1:nx, :, :]) / steps[0]
+        Ey[:, : ny - 1, :] = (p[:, : ny - 1, :] - p[:, 1:ny, :]) / steps[1]
+        Ez[:, :, : nz - 1] = (p[:, :, : nz - 1] - p[:, :, 1:nz]) / steps[2]
         Exyz = np.zeros((N, 3))
-        Exyz[:, 0] = ndimage.map_coordinates(Ex, np.c_[X[:, 0], X[:, 1] + 0.5, X[:, 2] + 0.5].T, order=1) * gamma
-        Exyz[:, 1] = ndimage.map_coordinates(Ey, np.c_[X[:, 0] + 0.5, X[:, 1], X[:, 2] + 0.5].T, order=1) * gamma
-        Exyz[:, 2] = ndimage.map_coordinates(Ez, np.c_[X[:, 0] + 0.5, X[:, 1] + 0.5, X[:, 2]].T, order=1)
+        Exyz[:, 0] = (
+            ndimage.map_coordinates(
+                Ex, np.c_[X[:, 0], X[:, 1] + 0.5, X[:, 2] + 0.5].T, order=1
+            )
+            * gamma
+        )
+        Exyz[:, 1] = (
+            ndimage.map_coordinates(
+                Ey, np.c_[X[:, 0] + 0.5, X[:, 1], X[:, 2] + 0.5].T, order=1
+            )
+            * gamma
+        )
+        Exyz[:, 2] = ndimage.map_coordinates(
+            Ez, np.c_[X[:, 0] + 0.5, X[:, 1] + 0.5, X[:, 2]].T, order=1
+        )
         return Exyz
-
 
     def apply(self, p_array, zstep):
         logger.debug(" apply: zstep = " + str(zstep))
@@ -209,7 +263,7 @@ class SpaceCharge(PhysProc):
             return
         nmesh_xyz = np.array(self.nmesh_xyz)
         gamref = p_array.E / m_e_GeV
-        betref2 = 1 - gamref ** -2
+        betref2 = 1 - gamref**-2
         betref = np.sqrt(betref2)
 
         # MAD coordinates!!!
@@ -232,7 +286,7 @@ class SpaceCharge(PhysProc):
 
         # electric field in the rest frame of bunch
         gamma0 = np.sqrt((Pav / m_e_eV) ** 2 + 1)
-        beta02 = 1 - gamma0 ** -2
+        beta02 = 1 - gamma0**-2
         beta0 = np.sqrt(beta02)
 
         Exyz = self.el_field(xyz, p_array.q_array, gamma0, nmesh_xyz)
@@ -242,7 +296,7 @@ class SpaceCharge(PhysProc):
 
         xp[3] = xp[3] + cdT * (1 - beta0 * beta0) * Exyz[:, 0]
         xp[4] = xp[4] + cdT * (1 - beta0 * beta0) * Exyz[:, 1]
-        xp[5] = xp[5] + cdT *  Exyz[:, 2]
+        xp[5] = xp[5] + cdT * Exyz[:, 2]
         T = np.transpose(T)
         xp[3:6] = np.dot(xp[3:6].T, T).T
         xp_2_xxstg_mad(xp, p_array.rparticles, gamref)
@@ -253,6 +307,7 @@ class LSC(PhysProc):
     Longitudinal Space Charge
     smooth_param - 0.1 smoothing parameter, resolution = np.std(p_array.tau())*smooth_param
     """
+
     def __init__(self, step=1):
         PhysProc.__init__(self, step)
         self.smooth_param = 0.1
@@ -275,15 +330,15 @@ class LSC(PhysProc):
         ind = np.where((alpha2 <= ass) & (alpha2 >= eps))[0]
 
         T = np.zeros(w.shape)
-        T[ind] = np.exp(alpha2[ind]) *exp1(alpha2[ind])
+        T[ind] = np.exp(alpha2[ind]) * exp1(alpha2[ind])
 
-        x= alpha2[inda]
+        x = alpha2[inda]
         k = 0
         for i in range(10):
             k += (-1) ** i * factorial(i) / (x ** (i + 1))
         T[inda] = k
-        Z = 1j * Z0 / (4 * pi * speed_of_light*gamma**2) * w * T * dz
-        return Z # --> Omm/m
+        Z = 1j * Z0 / (4 * pi * speed_of_light * gamma**2) * w * T * dz
+        return Z  # --> Omm/m
 
     def imp_step_lsc(self, gamma, rb, w, dz):
         """
@@ -295,10 +350,10 @@ class LSC(PhysProc):
         """
         indx = np.where(w < 1e-7)[0]
         w[indx] = 1e-7
-        x = w*rb/(speed_of_light*gamma)
-        Z = 1j*Z0 * speed_of_light / (4 * w * rb*rb) * dz * (1 - x*k1(x))
+        x = w * rb / (speed_of_light * gamma)
+        Z = 1j * Z0 * speed_of_light / (4 * w * rb * rb) * dz * (1 - x * k1(x))
         Z[indx] = 0
-        return Z # --> Omm/m
+        return Z  # --> Omm/m
 
     def wake2impedance(self, s, w):
         """
@@ -312,7 +367,7 @@ class LSC(PhysProc):
         dt = ds / speed_of_light
         n = len(s)
         f = 1 / dt * np.arange(0, n) / n
-        shift = 1#np.exp(1j * f * t0 * 2 * np.pi)
+        shift = 1  # np.exp(1j * f * t0 * 2 * np.pi)
         y = dt * np.fft.fft(w, n) * shift
         return f, y
 
@@ -337,7 +392,7 @@ class LSC(PhysProc):
         dt = ds / speed_of_light
         nb = len(s)
         n = nb * 2
-        f = 1 / dt * np.arange(0, n) /n
+        f = 1 / dt * np.arange(0, n) / n
         if self.step_profile:
             # space charge impedance of transverse step profile
             Za = self.imp_step_lsc(gamma, rb=sigma, w=f[0:nb] * 2 * np.pi, dz=dz)
@@ -374,50 +429,59 @@ class LSC(PhysProc):
         sigma_tau = np.std(p_array.tau())
         slice_min = mean_b - sigma_tau / 2.5
         slice_max = mean_b + sigma_tau / 2.5
-        indx = np.where(np.logical_and(np.greater_equal(p_array.tau(), slice_min), np.less(p_array.tau(), slice_max)))
+        indx = np.where(
+            np.logical_and(
+                np.greater_equal(p_array.tau(), slice_min),
+                np.less(p_array.tau(), slice_max),
+            )
+        )
 
         if self.step_profile:
-            rb = min(np.max(p_array.x()[indx]) - np.min(p_array.x()[indx]),
-                     np.max(p_array.y()[indx]) - np.min(p_array.y()[indx]))/2
+            rb = (
+                min(
+                    np.max(p_array.x()[indx]) - np.min(p_array.x()[indx]),
+                    np.max(p_array.y()[indx]) - np.min(p_array.y()[indx]),
+                )
+                / 2
+            )
             sigma = rb
         else:
-            sigma = (np.std(p_array.x()[indx]) + np.std(p_array.y()[indx]))/2.
+            sigma = (np.std(p_array.x()[indx]) + np.std(p_array.y()[indx])) / 2.0
             # sigma = min(np.std(p_array.x()[indx]), np.std(p_array.y()[indx]))
         q = np.sum(p_array.q_array)
         gamma = p_array.E / m_e_GeV
-        v = np.sqrt(1 - 1 / gamma ** 2) * speed_of_light
+        v = np.sqrt(1 - 1 / gamma**2) * speed_of_light
         B = s_to_cur(p_array.tau(), sigma_tau * self.smooth_param, q, v)
         bunch = B[:, 1] / (q * speed_of_light)
         x = B[:, 0]
 
-        W = - self.wake_lsc(x, bunch, gamma, sigma, dz) * q
+        W = -self.wake_lsc(x, bunch, gamma, sigma, dz) * q
 
         indx = np.argsort(p_array.tau(), kind="quicksort")
         tau_sort = p_array.tau()[indx]
         dE = np.interp(tau_sort, x, W)
 
-        pc_ref = np.sqrt(p_array.E ** 2 / m_e_GeV ** 2 - 1) * m_e_GeV
+        pc_ref = np.sqrt(p_array.E**2 / m_e_GeV**2 - 1) * m_e_GeV
         delta_p = dE * 1e-9 / pc_ref
         p_array.rparticles[5][indx] += delta_p
 
-
-        #fig, axs = plt.subplots(3, 1, sharex=True)
+        # fig, axs = plt.subplots(3, 1, sharex=True)
         ##ax = plt.subplot(211)
-        #axs[0].plot(-B[:, 0]*1e3, B[:, 1])
-        #axs[0].set_ylabel("I, [A]")
-        #axs[1].plot(-p_array.tau()[::10]*1e3, p_array.p()[::10], ".")
-        #axs[1].set_ylim(-0.01, 0.01)
-        #axs[1].set_ylabel("dE/E")
+        # axs[0].plot(-B[:, 0]*1e3, B[:, 1])
+        # axs[0].set_ylabel("I, [A]")
+        # axs[1].plot(-p_array.tau()[::10]*1e3, p_array.p()[::10], ".")
+        # axs[1].set_ylim(-0.01, 0.01)
+        # axs[1].set_ylabel("dE/E")
         ##plt.subplot(212)
-        #axs[2].plot(-x*1e3, W, label="s = "+str(p_array.s) + "  m")
-        #axs[2].set_ylabel("W, [V]")
-        #axs[2].set_xlabel("s, [mm]")
-        #plt.legend()
-        #plt.show()
+        # axs[2].plot(-x*1e3, W, label="s = "+str(p_array.s) + "  m")
+        # axs[2].set_ylabel("W, [V]")
+        # axs[2].set_xlabel("s, [mm]")
+        # plt.legend()
+        # plt.show()
         ##plt.ylim(-0.5e6, 0.5e6)
-        #dig = str(self.napply)
-        #name = "0"*(4 - len(dig)) + dig
-        #plt.savefig(name)
-        #plt.clf()
-        #self.napply += 1
+        # dig = str(self.napply)
+        # name = "0"*(4 - len(dig)) + dig
+        # plt.savefig(name)
+        # plt.clf()
+        # self.napply += 1
         ##plt.show()

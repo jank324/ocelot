@@ -1,8 +1,9 @@
 """Test parameters description"""
 
-import pytest
-import numpy as np
 import copy
+
+import numpy as np
+import pytest
 
 from ocelot import *
 
@@ -16,27 +17,26 @@ D = Drift(l=0.5)
 
 """pytest fixtures descripteion"""
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def cell():
     cell = (D, Q1, D, Q2, D, Q1, D)
     return [copy.deepcopy(cell), copy.deepcopy(cell)]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def method():
+    mmm1 = {"global": TransferMap}
 
-    mmm1 = {'global': TransferMap}
-
-    mmm2 = {'global': SecondTM}
+    mmm2 = {"global": SecondTM}
 
     return [mmm1, mmm2]
-    
-    
-@pytest.fixture(scope='module')
-def lattice(cell, method):
 
+
+@pytest.fixture(scope="module")
+def lattice(cell, method):
     result = []
     for i in range(2):
         result.append(MagneticLattice(cell[i], method=method[i]))
-        
+
     return result

@@ -1,16 +1,22 @@
-__author__ = 'Sergey Tomin'
+__author__ = "Sergey Tomin"
 
-from ocelot.rad.screen import *
-#from codes.genera.src.python.trajectory.tr_solver import trajectory_body
-from ocelot.lib.genera.src.python.trajectory.lat_trajectory import trace4radiation
-from ocelot.lib.genera.src.python.radiation.emitt_spread import  change_sizes_screen, convolution_all
-from ocelot.cpbd.beam import *
-from ctypes import CDLL, c_double, c_int, POINTER
-from numpy import array, zeros, abs
+from ctypes import CDLL, POINTER, c_double, c_int
 from sys import path
-from ocelot.rad.undulator_params import *
-from ocelot.common.globals import *
 from time import time
+
+from numpy import abs, array, zeros
+
+from ocelot.common.globals import *
+from ocelot.cpbd.beam import *
+from ocelot.lib.genera.src.python.radiation.emitt_spread import (
+    change_sizes_screen,
+    convolution_all,
+)
+
+# from codes.genera.src.python.trajectory.tr_solver import trajectory_body
+from ocelot.lib.genera.src.python.trajectory.lat_trajectory import trace4radiation
+from ocelot.rad.screen import *
+from ocelot.rad.undulator_params import *
 
 """
 if os_name == "nt":
@@ -24,33 +30,38 @@ else:
     if platform == "darwin":
         tail = "codes/genera/build/mac/radiation.so"
 """
-import ocelot
 import os
+
+import ocelot
 from ocelot import *
+
 path_to_ocelot = os.path.dirname(ocelot.__file__)
 
 tail = "/lib/genera/build/genera_libs/radiation.so"
 home_dir = path[0]
-#index =  path[0].find("siberia2")
+# index =  path[0].find("siberia2")
 pathToDll = path_to_ocelot + tail
 try:
     my_rad = CDLL(pathToDll)
 except:
-    exec(open(path_to_ocelot+ "ocelot/lib/genera/src/cpp/compile.py"))
+    exec(open(path_to_ocelot + "ocelot/lib/genera/src/cpp/compile.py"))
     os.chdir(home_dir)
     my_rad = CDLL(pathToDll)
 
 
 class Trajectory:
     """Charged Particle Trajectory"""
-    arX = array('d') #arrays of horizontal, vertical and longitudinal positions [m] and relative velocities
-    arXp = array('d')
-    arY = array('d')
-    arYp = array('d')
-    arZ = array('d')
-    arZp = array('d')
-    np = 0 #number of trajectory points
-    ctStart = 0 #start and end values of independent variable (c*t) for which the trajectory should be (/is) calculated (is constant step enough?)
+
+    arX = array(
+        "d"
+    )  # arrays of horizontal, vertical and longitudinal positions [m] and relative velocities
+    arXp = array("d")
+    arY = array("d")
+    arYp = array("d")
+    arZ = array("d")
+    arZp = array("d")
+    np = 0  # number of trajectory points
+    ctStart = 0  # start and end values of independent variable (c*t) for which the trajectory should be (/is) calculated (is constant step enough?)
     ctEnd = 0
 
 
@@ -66,40 +77,46 @@ def pointer_to_list(list_motion):
 
     dPtr = POINTER(c_double)
 
-    nPoints_elements = []#zeros((number_elements) , dtype = int32) # dtype = int32 it can cause PROBLEMS!!!
+    nPoints_elements = (
+        []
+    )  # zeros((number_elements) , dtype = int32) # dtype = int32 it can cause PROBLEMS!!!
     B = []
-    M = [0.]*number_elements
+    M = [0.0] * number_elements
     for j in range(number_elements):
         motion = list_motion[j]
         nPoints_elements.append(len(motion.Z))
-        #print "npoints on traject =",  nPoints_elements
+        # print "npoints on traject =",  nPoints_elements
         M[j] = motion.memory_motion
         B.append(M[j].ctypes.data_as(dPtr))
-    pointer = dPtr*number_elements
+    pointer = dPtr * number_elements
     ppMotion = pointer(*B)
-    arr_type =  c_int*number_elements
+    arr_type = c_int * number_elements
     ptr_nPoints_elements = arr_type(*nPoints_elements)
     return ppMotion, ptr_nPoints_elements
 
 
-def radiation(em_screen, list_motion, gamma, beam_current,undulator, mode_proc):
+def radiation(em_screen, list_motion, gamma, beam_current, undulator, mode_proc):
     em_screen.zerosArray()
-    c_scrPrm = em_screen.screenPy2C(undulator.lperiod, undulator.nperiods, undulator.status)
+    c_scrPrm = em_screen.screenPy2C(
+        undulator.lperiod, undulator.nperiods, undulator.status
+    )
     """  undulator.status is just for fast mode calculation (ideal undulator and zero initial conditions)  """
     ppMotion, ptr_nPoints_elements = pointer_to_list(list_motion)
 
     dPtr = POINTER(c_double)
-    ret = my_rad.emsolver(c_int(len(list_motion)),
-            ptr_nPoints_elements,
-            ppMotion,
-            c_double(gamma),
-            c_scrPrm,
-            em_screen.memory_screen.ctypes.data_as(dPtr))
+    ret = my_rad.emsolver(
+        c_int(len(list_motion)),
+        ptr_nPoints_elements,
+        ppMotion,
+        c_double(gamma),
+        c_scrPrm,
+        em_screen.memory_screen.ctypes.data_as(dPtr),
+    )
 
     if ret != 1:
         print("radiation return = ", ret)
 
-    em_screen.distPhoton(gamma, current = beam_current)
+    em_screen.distPhoton(gamma, current=beam_current)
     return em_screen
 
 
@@ -139,70 +156,76 @@ def define_status(cell, beam, mode_traj):
     beam_ok = 0
 
     for elem in cell.sequence:
-
-        if len(cell.sequence) == 1 and elem.type == "undulator" and elem.ax < 0 and mode_traj != "trajectory":
-            if elem.field_map == None :
+        if (
+            len(cell.sequence) == 1
+            and elem.type == "undulator"
+            and elem.ax < 0
+            and mode_traj != "trajectory"
+        ):
+            if elem.field_map == None:
                 undul_ok = 1
-        #print beam.x,beam.y,beam.xp,beam.yp
+        # print beam.x,beam.y,beam.xp,beam.yp
         if beam.x == 0 and beam.y == 0 and beam.xp == 0 and beam.yp == 0:
             beam_ok = 1
-            #print "####"
+            # print "####"
         if undul_ok == 1 and beam_ok:
             elem.status = 13
-            #beam.xp = - elem.Kx/beam.E*m_e_GeV
-            #beam.yp = - elem.Ky/beam.E*m_e_GeV
-            #print beam.xp
-            #print "fast calculation"
+            # beam.xp = - elem.Kx/beam.E*m_e_GeV
+            # beam.yp = - elem.Ky/beam.E*m_e_GeV
+            # print beam.xp
+            # print "fast calculation"
         else:
             elem.status = 0
 
+
 def data_format(emscreen):
-    #ypoint*xpoint*je + xpoint*jy + jx -->> array(arI1).reshape(screen.nx, screen.ny,screen.num_energy)
+    # ypoint*xpoint*je + xpoint*jy + jx -->> array(arI1).reshape(screen.nx, screen.ny,screen.num_energy)
 
     intens = zeros((emscreen.nx, emscreen.ny, emscreen.ne))
-    total = emscreen.Total.reshape(emscreen.ne, emscreen.ny,emscreen.nx)
+    total = emscreen.Total.reshape(emscreen.ne, emscreen.ny, emscreen.nx)
     for i in xrange(emscreen.ne):
-        intens[:,:,i] = total[i,:,:]
+        intens[:, :, i] = total[i, :, :]
     return intens
 
 
 def checking_step(lat, screen, beam, list_motions):
-
-    Q = 0.5866740802042227 #mm^-1*T^-1
-    gamma = beam.E/m_e_GeV
-    g2 = gamma*gamma
+    Q = 0.5866740802042227  # mm^-1*T^-1
+    gamma = beam.E / m_e_GeV
+    g2 = gamma * gamma
     z = screen.z - lat.totalLen
     xc_max = screen.size_x + screen.x
     yc_max = screen.size_y + screen.y
-    lph = h_eV_s*speed_of_light/screen.end_energy
+    lph = h_eV_s * speed_of_light / screen.end_energy
     Bmax = []
     Rx = []
     Ry = []
     L = 0
-    #import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
     for motion in list_motions:
-        if len(motion.Z)>3:
-            #print screen.z
-            #print motion.Z[:20], motion.Z[-20:]
-            z = screen.z*1000 - motion.Z*1e-3
-            rx = max(abs(xc_max*1000/z*0 - motion.X/z - motion.Xbeta))
-            ry = max(abs(yc_max*1000/z*0 - motion.Y/z - motion.Ybeta))
+        if len(motion.Z) > 3:
+            # print screen.z
+            # print motion.Z[:20], motion.Z[-20:]
+            z = screen.z * 1000 - motion.Z * 1e-3
+            rx = max(abs(xc_max * 1000 / z * 0 - motion.X / z - motion.Xbeta))
+            ry = max(abs(yc_max * 1000 / z * 0 - motion.Y / z - motion.Ybeta))
             B = max(motion.Bx**2 + motion.By**2)
             Bmax.append(B)
             L = motion.Z[-1] - motion.Z[0]
             Rx.append(rx)
             Ry.append(ry)
-    N1 = L*Q*max(Bmax)
+    N1 = L * Q * max(Bmax)
     rx = max(Rx)
     ry = max(Ry)
 
-    df = pi/(lph*g2)*(1 + g2*(rx*rx + ry*ry))
-    dz = pi/df/2.
-    N2 = L/dz/1000
-    #print "N2/N1 = ", N2, "/",N1
-    #for i in xrange(int(len(list_motions)/11)):
+    df = pi / (lph * g2) * (1 + g2 * (rx * rx + ry * ry))
+    dz = pi / df / 2.0
+    N2 = L / dz / 1000
+    # print "N2/N1 = ", N2, "/",N1
+    # for i in xrange(int(len(list_motions)/11)):
     #    df_dz = pi/(lph*g2)*(1 + g2*())
-    #print "N1+N2 = ", 1.3*(N1+N2 + 100)+100
+    # print "N1+N2 = ", 1.3*(N1+N2 + 100)+100
+
+
 """
 def calculateSR_py(lat, beam, screen, runParameters = None):
 
@@ -376,7 +399,7 @@ def print_rad_props(beam, K, lu, L, E, distance):
 """
 
 
-def calculateSR_py(lat, beam, screen, accuracy = 2, runParameters = None):
+def calculateSR_py(lat, beam, screen, accuracy=2, runParameters=None):
     """
     1. find trajectory and mag field on the trajectory. system of unit is [mm,rad]
     2. display undulator parameter, for the controlling of calculation
@@ -391,47 +414,52 @@ def calculateSR_py(lat, beam, screen, accuracy = 2, runParameters = None):
     screen.update()
     accuracy = accuracy
 
-    #print "in calculator ", screen.size_x, screen.x
+    # print "in calculator ", screen.size_x, screen.x
     for elem in lat.sequence:
         if elem.__class__ == Undulator:
-            #print_rad_props(beam, elem.Kx, elem.lperiod, elem.l, screen.z)
+            # print_rad_props(beam, elem.Kx, elem.lperiod, elem.l, screen.z)
             undulator = elem
             undulator.status = 0
-    beam.gamma = beam.E/m_e_GeV
-    particle0 = Particle(x=beam.x, y=beam.y, px=beam.xp, py=beam.xp, s=0.0, p=0, tau=0, E=beam.E)
-    list_motions = trace4radiation(lat, particle0, accuracy = accuracy)
-    #TODO: include in process checking_step
+    beam.gamma = beam.E / m_e_GeV
+    particle0 = Particle(
+        x=beam.x, y=beam.y, px=beam.xp, py=beam.xp, s=0.0, p=0, tau=0, E=beam.E
+    )
+    list_motions = trace4radiation(lat, particle0, accuracy=accuracy)
+    # TODO: include in process checking_step
     checking_step(lat, screen, beam, list_motions)
 
     trj = motion_to_trj(list_motions)
-    #showMeTrajectory(list_motions)
-    #display_undulator_param(screen, cell, beam, list_motion, show_param)
-    #em_screen = EMScreen(screen)
+    # showMeTrajectory(list_motions)
+    # display_undulator_param(screen, cell, beam, list_motion, show_param)
+    # em_screen = EMScreen(screen)
 
-    beam_current = beam.I*1000
+    beam_current = beam.I * 1000
 
-    #print ("before x:", screen.nx, screen.x_start, screen.x_step)
-    #print ("before y:", screen.ny, screen.y_start, screen.y_step)
-    #print ("before e:", screen.ne, screen.e_start, screen.e_step)
+    # print ("before x:", screen.nx, screen.x_start, screen.x_step)
+    # print ("before y:", screen.ny, screen.y_start, screen.y_step)
+    # print ("before e:", screen.ne, screen.e_start, screen.e_step)
     change_sizes_screen(screen, beam)
-    #print ("after x:", screen.nx, screen.x_start, screen.x_step, screen.nx_add)
-    #print ("after y:", screen.ny, screen.y_start, screen.y_step, screen.ny_add)
-    #print ("after e:", screen.ne, screen.e_start, screen.e_step, screen.ne_add)
+    # print ("after x:", screen.nx, screen.x_start, screen.x_step, screen.nx_add)
+    # print ("after y:", screen.ny, screen.y_start, screen.y_step, screen.ny_add)
+    # print ("after e:", screen.ne, screen.e_start, screen.e_step, screen.ne_add)
     start = time()
-    em_screen = radiation(screen, list_motions, beam.gamma, beam_current, undulator, mode_proc = "CPU")
-    #print ("radiation solver: ", time() - start, " sec")
+    em_screen = radiation(
+        screen, list_motions, beam.gamma, beam_current, undulator, mode_proc="CPU"
+    )
+    # print ("radiation solver: ", time() - start, " sec")
     start = time()
 
     convolution_all(em_screen)
-    #print ("convolution solver: ", time() - start, " sec")
-    #intens = data_format(em_screen)
-    #show_flux(em_screen)
+    # print ("convolution solver: ", time() - start, " sec")
+    # intens = data_format(em_screen)
+    # show_flux(em_screen)
     return trj, em_screen
 
 
-from  scipy.special import kv
-from scipy.integrate import simps
 from numpy import linspace
+from scipy.integrate import simps
+from scipy.special import kv
+
 
 class Bend_radiation:
     def __init__(self, B0, energy, I):
@@ -442,35 +470,66 @@ class Bend_radiation:
         :param I: beam current in A
         :return:
         """
-        h_bar = 6.58211928e-16 #eV*sec
-        self.B0 = B0            #T
-        self.energy = energy # GeV
-        self.I = I  #A
-        self.eph_c = 0.665 * self.energy  * self.energy  * self.B0*1000. # eV
-        self.w_c = self.eph_c/h_bar
-        self.gamma = energy*1957.
-        #print self.eph_c, self.w_c, self.gamma
+        h_bar = 6.58211928e-16  # eV*sec
+        self.B0 = B0  # T
+        self.energy = energy  # GeV
+        self.I = I  # A
+        self.eph_c = 0.665 * self.energy * self.energy * self.B0 * 1000.0  # eV
+        self.w_c = self.eph_c / h_bar
+        self.gamma = energy * 1957.0
+        # print self.eph_c, self.w_c, self.gamma
 
     def flux_distrib(self):
         """
 
         :return: flux in ph/sec/mrad**2/0.1%BW
         """
-        C_om = 1.3255e22 #ph/(sec * rad**2 * GeV**2 * A)
+        C_om = 1.3255e22  # ph/(sec * rad**2 * GeV**2 * A)
         g = self.gamma
-        #self.eph_c = 1.
-        ksi = lambda w,t: 1./2.*w * (1. + g*g*t*t)**(3./2.)
-        F = lambda w, t: (1.+g*g*t*t)**2  * (1.+
-                         g*g*t*t/(1.+g*g*t*t) * (kv(1./3.,ksi(w, t))/kv(2./3.,ksi(w, t)))**2)
+        # self.eph_c = 1.
+        ksi = lambda w, t: 1.0 / 2.0 * w * (1.0 + g * g * t * t) ** (3.0 / 2.0)
+        F = lambda w, t: (1.0 + g * g * t * t) ** 2 * (
+            1.0
+            + g
+            * g
+            * t
+            * t
+            / (1.0 + g * g * t * t)
+            * (kv(1.0 / 3.0, ksi(w, t)) / kv(2.0 / 3.0, ksi(w, t))) ** 2
+        )
 
         dw_over_w = 0.001  # 0.1% BW
-        mrad2 = 1e-6 # transform rad to mrad
-        I = lambda eph, theta: mrad2*C_om * self.energy**2*self.I* dw_over_w* (eph/self.eph_c)**2 * kv(2./3.,ksi(eph/self.eph_c,theta))**2 * F(eph/self.eph_c, theta)
+        mrad2 = 1e-6  # transform rad to mrad
+        I = (
+            lambda eph, theta: mrad2
+            * C_om
+            * self.energy**2
+            * self.I
+            * dw_over_w
+            * (eph / self.eph_c) ** 2
+            * kv(2.0 / 3.0, ksi(eph / self.eph_c, theta)) ** 2
+            * F(eph / self.eph_c, theta)
+        )
         return I
 
     def flux_total(self):
-        C_fi = 3.9614e19 #ph/(sec * rad * GeV * A)
-        mrad = 1e-3 # transform rad to mrad
-        S = lambda w: 9.*sqrt(3)/8./pi*w*simps(kv(5./3.,linspace(w, 20, num=200)))
-        F = lambda eph: mrad*C_fi*self.energy*self.I*eph/self.eph_c*S(eph/self.eph_c)
+        C_fi = 3.9614e19  # ph/(sec * rad * GeV * A)
+        mrad = 1e-3  # transform rad to mrad
+        S = (
+            lambda w: 9.0
+            * sqrt(3)
+            / 8.0
+            / pi
+            * w
+            * simps(kv(5.0 / 3.0, linspace(w, 20, num=200)))
+        )
+        F = (
+            lambda eph: mrad
+            * C_fi
+            * self.energy
+            * self.I
+            * eph
+            / self.eph_c
+            * S(eph / self.eph_c)
+        )
         return F

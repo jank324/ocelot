@@ -1,7 +1,7 @@
 from typing import Optional
 
-import pmd_beamphysics as pmd
 import numpy as np
+import pmd_beamphysics as pmd
 
 from ocelot.cpbd.beam import ParticleArray
 

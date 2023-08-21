@@ -1,5 +1,5 @@
 from ocelot.cpbd.tm_params.first_order_params import FirstOrderParams
-from ocelot.cpbd.tm_utils import transfer_map_rotation, sym_matrix
+from ocelot.cpbd.tm_utils import sym_matrix, transfer_map_rotation
 
 
 class SecondOrderParams(FirstOrderParams):

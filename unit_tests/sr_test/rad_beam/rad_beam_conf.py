@@ -1,26 +1,25 @@
 """Test parameters description file"""
 
+import numpy as np
 import pytest
 
 from ocelot import *
 from ocelot.rad import *
-import numpy as np
-
 
 """Lattice elements defenition"""
 
 und = Undulator(lperiod=0.4, nperiods=9, Kx=44.81)
 
 """pytest fixtures defenition"""
-    
-@pytest.fixture(scope='module')
+
+
+@pytest.fixture(scope="module")
 def lattice():
     return MagneticLattice((und))
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def beam():
-
     chirp_coeff = 0.01 / 2.36
     sigma_tau = 100e-6 / 2.36
 
@@ -35,7 +34,7 @@ def beam():
     return p_array
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def screen():
     s = Screen()
     s.z = 1000.0

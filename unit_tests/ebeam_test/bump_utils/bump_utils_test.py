@@ -1,28 +1,37 @@
 """Test of the demo file demos/ebeam/csr_ex.py"""
 
+import copy
 import os
 import sys
-import copy
 import time
 
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-REF_RES_DIR = FILE_DIR + '/ref_results/'
+REF_RES_DIR = FILE_DIR + "/ref_results/"
+
+from bump_utils_conf import *
 
 from unit_tests.params import *
-from bump_utils_conf import *
 
 
 def test_lattice_transfer_map(lattice, parameter=None, update_ref_values=False):
     """R matrix calculation test"""
 
     r_matrix = lattice_transfer_map(lattice, 0.0)
-    
+
     if update_ref_values:
         return numpy2json(r_matrix)
 
-    r_matrix_ref = json2numpy(json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json'))
-    
-    result = check_matrix(r_matrix, r_matrix_ref, tolerance=1.0e-10, tolerance_type='absolute', assert_info=' r_matrix - ')
+    r_matrix_ref = json2numpy(
+        json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
+    )
+
+    result = check_matrix(
+        r_matrix,
+        r_matrix_ref,
+        tolerance=1.0e-10,
+        tolerance_type="absolute",
+        assert_info=" r_matrix - ",
+    )
     assert check_result(result)
 
 
@@ -40,15 +49,21 @@ def test_bump(lattice, parameter=None, update_ref_values=False):
     if update_ref_values:
         return plist
 
-    plist_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    plist_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(plist, plist_ref, tolerance=1.0e-10, tolerance_type='absolute', assert_info=' plist - ')
+    result = check_dict(
+        plist,
+        plist_ref,
+        tolerance=1.0e-10,
+        tolerance_type="absolute",
+        assert_info=" plist - ",
+    )
 
     assert check_result(result)
 
 
 def test_bump_2nd_order(lattice, parameter=None, update_ref_values=False):
-    """test bump with 2nd order matrices """
+    """test bump with 2nd order matrices"""
     lattice = MagneticLattice(lattice.sequence, method={"global": SecondTM})
     cor_list = [c1, c2, c3, c4]
     a = bump_4cors(lattice, cor_list, marker=m, x=0.001, xp=-0.00, energy=1)
@@ -61,14 +76,20 @@ def test_bump_2nd_order(lattice, parameter=None, update_ref_values=False):
     if update_ref_values:
         return plist
 
-    plist_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    plist_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(plist, plist_ref, tolerance=1.0e-10, tolerance_type='absolute', assert_info=' plist - ')
+    result = check_dict(
+        plist,
+        plist_ref,
+        tolerance=1.0e-10,
+        tolerance_type="absolute",
+        assert_info=" plist - ",
+    )
 
     assert check_result(result)
 
-def test_bump_disp(lattice, parameter=None, update_ref_values=False):
 
+def test_bump_disp(lattice, parameter=None, update_ref_values=False):
     cor_list = [c1, c2, c3, c4]
 
     a = bump_4cors(lattice, cor_list, marker=m, x=0.001, xp=-0.00, energy=1)
@@ -84,31 +105,27 @@ def test_bump_disp(lattice, parameter=None, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws - ')
+    result = check_dict(tws, tws_ref, TOL, "absotute", assert_info=" tws - ")
 
     assert check_result(result)
 
 
-
 def setup_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### BUMP_UTILS START ###\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### BUMP_UTILS START ###\n\n")
     f.close()
 
 
 def teardown_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### BUMP_UTILS END ###\n\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### BUMP_UTILS END ###\n\n\n")
     f.close()
 
 
 def setup_function(function):
-    
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
     f.write(function.__name__)
     f.close()
 
@@ -116,28 +133,38 @@ def setup_function(function):
 
 
 def teardown_function(function):
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write(' execution time is ' + '{:.3f}'.format(time.time() - pytest.t_start) + ' sec\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write(
+        " execution time is "
+        + "{:.3f}".format(time.time() - pytest.t_start)
+        + " sec\n\n"
+    )
     f.close()
-    
+
 
 @pytest.mark.update
 def test_update_ref_values(lattice, cmdopt):
-    
     update_functions = []
-    update_functions.append('test_lattice_transfer_map')
-    update_functions.append('test_bump')
+    update_functions.append("test_lattice_transfer_map")
+    update_functions.append("test_bump")
     update_functions.append("test_bump_2nd_order")
-    update_functions.append('test_bump_disp')
+    update_functions.append("test_bump_disp")
     update_function_parameters = {}
 
-    parameter = update_function_parameters[cmdopt] if cmdopt in update_function_parameters.keys() else ['']
+    parameter = (
+        update_function_parameters[cmdopt]
+        if cmdopt in update_function_parameters.keys()
+        else [""]
+    )
 
     if cmdopt in update_functions:
         for p in parameter:
             result = eval(cmdopt)(lattice, p, True)
-        
-            if os.path.isfile(REF_RES_DIR + cmdopt + str(p) + '.json'):
-                os.rename(REF_RES_DIR + cmdopt + str(p) + '.json', REF_RES_DIR + cmdopt + str(p) + '.old')
-            
-            json_save(result, REF_RES_DIR + cmdopt + str(p) + '.json')
+
+            if os.path.isfile(REF_RES_DIR + cmdopt + str(p) + ".json"):
+                os.rename(
+                    REF_RES_DIR + cmdopt + str(p) + ".json",
+                    REF_RES_DIR + cmdopt + str(p) + ".old",
+                )
+
+            json_save(result, REF_RES_DIR + cmdopt + str(p) + ".json")

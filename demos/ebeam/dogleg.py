@@ -4,22 +4,21 @@ DogLeg. Second order achromat
 S.Tomin. 10.2018
 """
 
-from ocelot import *
-from ocelot.gui.accelerator import *
 import dogleg_lattice as dl
-from ocelot.cpbd.beam import *
 
+from ocelot import *
+from ocelot.cpbd.beam import *
+from ocelot.gui.accelerator import *
 
 # create and plot dogleg lattice
 
-method = {'global': SecondTM}
+method = {"global": SecondTM}
 
-lat = MagneticLattice(dl.cell,  method=method)
+lat = MagneticLattice(dl.cell, method=method)
 
 tws = twiss(lat, tws0=dl.tws0)
 plot_opt_func(lat, tws, top_plot=["Dy"])
 plt.show()
-
 
 
 def track_though_dl(emitt, energy_shift, tws0, energy=0.13, nparticles=100000):
@@ -35,8 +34,12 @@ def track_though_dl(emitt, energy_shift, tws0, energy=0.13, nparticles=100000):
     """
 
     # generation of the ParticleArray
-    p_array = generate_parray(sigma_x=np.sqrt(emitt*dl.tws0.beta_x), sigma_px=np.sqrt(emitt*dl.tws0.gamma_x),
-                               energy=energy, nparticles=nparticles)
+    p_array = generate_parray(
+        sigma_x=np.sqrt(emitt * dl.tws0.beta_x),
+        sigma_px=np.sqrt(emitt * dl.tws0.gamma_x),
+        energy=energy,
+        nparticles=nparticles,
+    )
 
     # introduce energy shift
     p_array.p()[:] += energy_shift
@@ -47,33 +50,47 @@ def track_though_dl(emitt, energy_shift, tws0, energy=0.13, nparticles=100000):
     navi.add_physics_proc(bt, lat.sequence[0], lat.sequence[0])
 
     # tracking
-    tws_track, p_array = track(lat, p_array, navi=navi, calc_tws=True, print_progress=True)
+    tws_track, p_array = track(
+        lat, p_array, navi=navi, calc_tws=True, print_progress=True
+    )
 
     return tws_track[-1]
 
 
 def phase_ellipse(alpha, beta, emitt):
-    t = np.arange(0, 1, 0.01)*2*pi
+    t = np.arange(0, 1, 0.01) * 2 * pi
     x = np.cos(t)
     y = np.sin(t)
     M = m_from_twiss([0, 1, 0], [alpha, beta, 0])
-    x1 = (M[0, 0]*x + M[0, 1] * y)*np.sqrt(emitt)
-    y1 = (M[1, 0]*x + M[1, 1] * y)*np.sqrt(emitt)
+    x1 = (M[0, 0] * x + M[0, 1] * y) * np.sqrt(emitt)
+    y1 = (M[1, 0] * x + M[1, 1] * y) * np.sqrt(emitt)
     return x1, y1
 
 
-
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+colors = ["#1f77b4", "#ff7f0e", "#2ca02c"]
 
 fig, axs = plt.subplots(ncols=3, nrows=2)
-fig.suptitle('Phase space at the end of Dogleg')
-axs[0, 0].set(title="Sext ON. Bend in Y plane. X plane", xlabel=r"$x$, $\mu m$", ylabel=r"$p_x$, $\mu rad$")
-axs[1, 0].set(title="Sext ON. Bend in Y plane. Y plane", xlabel=r"$y$, $\mu m$", ylabel=r"$p_y$, $\mu rad$")
+fig.suptitle("Phase space at the end of Dogleg")
+axs[0, 0].set(
+    title="Sext ON. Bend in Y plane. X plane",
+    xlabel=r"$x$, $\mu m$",
+    ylabel=r"$p_x$, $\mu rad$",
+)
+axs[1, 0].set(
+    title="Sext ON. Bend in Y plane. Y plane",
+    xlabel=r"$y$, $\mu m$",
+    ylabel=r"$p_y$, $\mu rad$",
+)
 
 for i in range(3):
-
     energy_shift = (-1 + i) * 0.05
-    tws = track_though_dl(emitt=3.9308e-09, energy_shift=energy_shift, tws0=dl.tws0, energy=0.13, nparticles=100000)
+    tws = track_though_dl(
+        emitt=3.9308e-09,
+        energy_shift=energy_shift,
+        tws0=dl.tws0,
+        energy=0.13,
+        nparticles=100000,
+    )
 
     x, px = phase_ellipse(tws.alpha_x, tws.beta_x, tws.emit_x)
     y, py = phase_ellipse(tws.alpha_y, tws.beta_y, tws.emit_y)
@@ -83,11 +100,23 @@ for i in range(3):
     px += tws.px
     py += tws.py
 
-    axs[0, 0].plot(x*1e6, px*1e6, linestyle="-", color=colors[i], label=r"$\frac{\Delta E}{pc}=$"+ str(energy_shift))
-    axs[0, 0].plot(tws.x*1e6, tws.px*1e6, marker='o',color=colors[i])
+    axs[0, 0].plot(
+        x * 1e6,
+        px * 1e6,
+        linestyle="-",
+        color=colors[i],
+        label=r"$\frac{\Delta E}{pc}=$" + str(energy_shift),
+    )
+    axs[0, 0].plot(tws.x * 1e6, tws.px * 1e6, marker="o", color=colors[i])
 
-    axs[1, 0].plot(y*1e6, py*1e6, linestyle="-", color=colors[i], label=r"$\frac{\Delta E}{pc}=$"+ str(energy_shift))
-    axs[1, 0].plot(tws.y*1e6, tws.py*1e6, marker='o',color=colors[i])
+    axs[1, 0].plot(
+        y * 1e6,
+        py * 1e6,
+        linestyle="-",
+        color=colors[i],
+        label=r"$\frac{\Delta E}{pc}=$" + str(energy_shift),
+    )
+    axs[1, 0].plot(tws.y * 1e6, tws.py * 1e6, marker="o", color=colors[i])
 
 
 for elem in lat.sequence:
@@ -97,22 +126,34 @@ for elem in lat.sequence:
         elem.k1 *= -1
 lat.update_transfer_maps()
 
-axs[0, 1].set(title="Sext ON. Bend in X plane. X plane", xlabel=r"$x$, $\mu m$", ylabel=r"$p_x$, $\mu rad$")
-axs[1, 1].set(title="Sext ON. Bend in X plane. Y plane", xlabel=r"$y$, $\mu m$", ylabel=r"$p_y$, $\mu rad$")
+axs[0, 1].set(
+    title="Sext ON. Bend in X plane. X plane",
+    xlabel=r"$x$, $\mu m$",
+    ylabel=r"$p_x$, $\mu rad$",
+)
+axs[1, 1].set(
+    title="Sext ON. Bend in X plane. Y plane",
+    xlabel=r"$y$, $\mu m$",
+    ylabel=r"$p_y$, $\mu rad$",
+)
 
 for i in range(3):
-
     energy_shift = (-1 + i) * 0.05
     tws0 = Twiss()
     tws0.beta_x = dl.tws0.beta_y
     tws0.beta_y = dl.tws0.beta_x
-    tws0.alpha_x =dl.tws0.alpha_y
-    tws0.alpha_y =dl.tws0.alpha_x
-    tws0.gamma_x =dl.tws0.gamma_y
-    tws0.gamma_y =dl.tws0.gamma_x
+    tws0.alpha_x = dl.tws0.alpha_y
+    tws0.alpha_y = dl.tws0.alpha_x
+    tws0.gamma_x = dl.tws0.gamma_y
+    tws0.gamma_y = dl.tws0.gamma_x
 
-
-    tws = track_though_dl(emitt=3.9308e-09, energy_shift=energy_shift, tws0=tws0, energy=0.13, nparticles=100000)
+    tws = track_though_dl(
+        emitt=3.9308e-09,
+        energy_shift=energy_shift,
+        tws0=tws0,
+        energy=0.13,
+        nparticles=100000,
+    )
 
     x, px = phase_ellipse(tws.alpha_x, tws.beta_x, tws.emit_x)
     y, py = phase_ellipse(tws.alpha_y, tws.beta_y, tws.emit_y)
@@ -122,33 +163,57 @@ for i in range(3):
     px += tws.px
     py += tws.py
 
-    axs[0, 1].plot(x*1e6, px*1e6, linestyle="-", color=colors[i], label=r"$\frac{\Delta E}{pc}=$"+ str(energy_shift))
-    axs[0, 1].plot(tws.x*1e6, tws.px*1e6, marker='o',color=colors[i])
+    axs[0, 1].plot(
+        x * 1e6,
+        px * 1e6,
+        linestyle="-",
+        color=colors[i],
+        label=r"$\frac{\Delta E}{pc}=$" + str(energy_shift),
+    )
+    axs[0, 1].plot(tws.x * 1e6, tws.px * 1e6, marker="o", color=colors[i])
 
-    axs[1, 1].plot(y*1e6, py*1e6, linestyle="-", color=colors[i], label=r"$\frac{\Delta E}{pc}=$"+ str(energy_shift))
-    axs[1, 1].plot(tws.y*1e6, tws.py*1e6, marker='o',color=colors[i])
+    axs[1, 1].plot(
+        y * 1e6,
+        py * 1e6,
+        linestyle="-",
+        color=colors[i],
+        label=r"$\frac{\Delta E}{pc}=$" + str(energy_shift),
+    )
+    axs[1, 1].plot(tws.y * 1e6, tws.py * 1e6, marker="o", color=colors[i])
 
 for elem in lat.sequence:
     if elem.__class__ == Sextupole:
         elem.k2 = 0
 lat.update_transfer_maps()
 
-axs[0, 2].set(title="Sext OFF. Bend in X plane. X plane", xlabel=r"$x$, $\mu m$", ylabel=r"$p_x$, $\mu rad$")
-axs[1, 2].set(title="Sext OFF. Bend in X plane. Y plane", xlabel=r"$y$, $\mu m$", ylabel=r"$p_y$, $\mu rad$")
+axs[0, 2].set(
+    title="Sext OFF. Bend in X plane. X plane",
+    xlabel=r"$x$, $\mu m$",
+    ylabel=r"$p_x$, $\mu rad$",
+)
+axs[1, 2].set(
+    title="Sext OFF. Bend in X plane. Y plane",
+    xlabel=r"$y$, $\mu m$",
+    ylabel=r"$p_y$, $\mu rad$",
+)
 
 for i in range(3):
-
     energy_shift = (-1 + i) * 0.05
     tws0 = Twiss()
     tws0.beta_x = dl.tws0.beta_y
     tws0.beta_y = dl.tws0.beta_x
-    tws0.alpha_x =dl.tws0.alpha_y
-    tws0.alpha_y =dl.tws0.alpha_x
-    tws0.gamma_x =dl.tws0.gamma_y
-    tws0.gamma_y =dl.tws0.gamma_x
+    tws0.alpha_x = dl.tws0.alpha_y
+    tws0.alpha_y = dl.tws0.alpha_x
+    tws0.gamma_x = dl.tws0.gamma_y
+    tws0.gamma_y = dl.tws0.gamma_x
 
-
-    tws = track_though_dl(emitt=3.9308e-09, energy_shift=energy_shift, tws0=tws0, energy=0.13, nparticles=100000)
+    tws = track_though_dl(
+        emitt=3.9308e-09,
+        energy_shift=energy_shift,
+        tws0=tws0,
+        energy=0.13,
+        nparticles=100000,
+    )
 
     x, px = phase_ellipse(tws.alpha_x, tws.beta_x, tws.emit_x)
     y, py = phase_ellipse(tws.alpha_y, tws.beta_y, tws.emit_y)
@@ -158,10 +223,22 @@ for i in range(3):
     px += tws.px
     py += tws.py
 
-    axs[0, 2].plot(x*1e6, px*1e6, linestyle="-", color=colors[i], label=r"$\frac{\Delta E}{pc}=$"+ str(energy_shift))
-    axs[0, 2].plot(tws.x*1e6, tws.px*1e6, marker='o',color=colors[i])
+    axs[0, 2].plot(
+        x * 1e6,
+        px * 1e6,
+        linestyle="-",
+        color=colors[i],
+        label=r"$\frac{\Delta E}{pc}=$" + str(energy_shift),
+    )
+    axs[0, 2].plot(tws.x * 1e6, tws.px * 1e6, marker="o", color=colors[i])
 
-    axs[1, 2].plot(y*1e6, py*1e6, linestyle="-", color=colors[i], label=r"$\frac{\Delta E}{pc}=$"+ str(energy_shift))
-    axs[1, 2].plot(tws.y*1e6, tws.py*1e6, marker='o',color=colors[i])
+    axs[1, 2].plot(
+        y * 1e6,
+        py * 1e6,
+        linestyle="-",
+        color=colors[i],
+        label=r"$\frac{\Delta E}{pc}=$" + str(energy_shift),
+    )
+    axs[1, 2].plot(tws.y * 1e6, tws.py * 1e6, marker="o", color=colors[i])
 
 plt.show()

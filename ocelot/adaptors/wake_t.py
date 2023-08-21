@@ -7,14 +7,16 @@ from typing import Optional
 
 import numpy as np
 import scipy.constants as ct
+
 try:
     from wake_t import ParticleBunch
+
     wake_t_installed = True
 except ImportError:
     wake_t_installed = False
 
-from ocelot.cpbd.beam import ParticleArray
 from ocelot.common.globals import m_e_GeV
+from ocelot.cpbd.beam import ParticleArray
 
 
 def wake_t_beam_to_parray(
@@ -49,7 +51,7 @@ def wake_t_beam_to_parray(
     is_electron_beam = (
         wake_t_beam.q_species == -ct.e and wake_t_beam.m_species == ct.m_e
     )
-    assert is_electron_beam, 'Only electron beams are supported in Ocelot.'
+    assert is_electron_beam, "Only electron beams are supported in Ocelot."
 
     # Extract particle coordinates.
     x = wake_t_beam.x  # [m]
@@ -70,8 +72,8 @@ def wake_t_beam_to_parray(
         z_ref = wake_t_beam.prop_distance
 
     # Calculate momentum deviation (dp) and kinetic momentum (p_kin).
-    b_ref = np.sqrt(1 - gamma_ref**(-2))
-    dp = (gamma-gamma_ref)/(gamma_ref*b_ref)
+    b_ref = np.sqrt(1 - gamma_ref ** (-2))
+    dp = (gamma - gamma_ref) / (gamma_ref * b_ref)
     p_kin = np.sqrt(gamma_ref**2 - 1)
 
     # Create particle array
@@ -79,8 +81,8 @@ def wake_t_beam_to_parray(
     p_array.rparticles[0] = x
     p_array.rparticles[2] = y
     p_array.rparticles[4] = -(z - z_ref)
-    p_array.rparticles[1] = px/p_kin
-    p_array.rparticles[3] = py/p_kin
+    p_array.rparticles[1] = px / p_kin
+    p_array.rparticles[3] = py / p_kin
     p_array.rparticles[5] = dp
     p_array.q_array[:] = q
     p_array.s = z_ref
@@ -89,9 +91,7 @@ def wake_t_beam_to_parray(
     return p_array
 
 
-def parray_to_wake_t_beam(
-    p_array : ParticleArray
-) -> ParticleBunch:
+def parray_to_wake_t_beam(p_array: ParticleArray) -> ParticleBunch:
     """
     Converts an Ocelot ParticleArray to a Wake-T ParticleBunch.
 
@@ -107,8 +107,10 @@ def parray_to_wake_t_beam(
     """
     # Check if Wake-T is installed.
     if not wake_t_installed:
-        raise ImportError('Wake-T is not installed. '
-                          'Cannot perform conversion to Wake-T ParticleBunch.')
+        raise ImportError(
+            "Wake-T is not installed. "
+            "Cannot perform conversion to Wake-T ParticleBunch."
+        )
 
     # Get beam matrix and reference values.
     beam_matrix = p_array.rparticles
@@ -117,8 +119,8 @@ def parray_to_wake_t_beam(
 
     # Calculate gamma and kinetic momentum (p_kin).
     dp = beam_matrix[5]
-    b_ref = np.sqrt(1 - gamma_ref**(-2))
-    gamma = dp*gamma_ref*b_ref + gamma_ref
+    b_ref = np.sqrt(1 - gamma_ref ** (-2))
+    gamma = dp * gamma_ref * b_ref + gamma_ref
     p_kin = np.sqrt(gamma_ref**2 - 1)
 
     # Create coordinate arrays in Wake-T units.
@@ -126,7 +128,7 @@ def parray_to_wake_t_beam(
     px = beam_matrix[1] * p_kin
     y = beam_matrix[2]
     py = beam_matrix[3] * p_kin
-    z = - beam_matrix[4]
+    z = -beam_matrix[4]
     pz = np.sqrt(gamma**2 - px**2 - py**2 - 1)
     w = p_array.q_array / ct.e
 

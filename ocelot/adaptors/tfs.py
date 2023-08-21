@@ -1,6 +1,7 @@
+import logging
+
 import ocelot.cpbd.elements as elements
 from ocelot.cpbd.beam import Twiss
-import logging
 
 try:
     import tfs
@@ -10,14 +11,13 @@ except ImportError:
     )
 
 
-
-
 def tfs_to_cell_and_optics(tfs_path):
     tfs_table = tfs.read(tfs_path)
 
     cell = convert_tfs_lattice(tfs_table)
     optics = optics_from_tfs(tfs_table)
     return cell, optics
+
 
 def optics_from_tfs(tfs_table):
     twiss = Twiss()
@@ -52,7 +52,9 @@ def optics_from_tfs(tfs_table):
     return twiss
 
 
-class UnsupportedMADXElementType(RuntimeError): pass
+class UnsupportedMADXElementType(RuntimeError):
+    pass
+
 
 def convert_tfs_lattice(tfs_table, converter=None):
     if converter is None:
@@ -69,62 +71,53 @@ class MADXLatticeConverter:
         try:
             return getattr(self, f"make_{etypelow}")(row)
         except AttributeError:
-            raise UnsupportedMADXElementType(
-                f"Unsupported element type: {etype}."
-            )
+            raise UnsupportedMADXElementType(f"Unsupported element type: {etype}.")
 
     def make_marker(self, row):
         return elements.Marker(eid=row.NAME)
 
     def make_monitor(self, row):
-        return elements.Monitor(eid=row.NAME, l = row.L)
+        return elements.Monitor(eid=row.NAME, l=row.L)
 
     def make_drift(self, row):
         return elements.Drift(eid=row.NAME, l=row.L)
 
     def make_sbend(self, row):
-        return elements.SBend(eid=row.NAME,
-                              l=row.L,
-                              angle=row.ANGLE,
-                              tilt=row.TILT,
-                              e1=row.E1,
-                              e2=row.E2)
+        return elements.SBend(
+            eid=row.NAME, l=row.L, angle=row.ANGLE, tilt=row.TILT, e1=row.E1, e2=row.E2
+        )
 
     def make_rbend(self, row):
-        return elements.RBend(eid=row.NAME,
-                              l=row.L,
-                              angle=row.ANGLE,
-                              k1=row.K1L/row.L,
-                              k2=row.K2L/row.L,
-                              tilt=row.TILT,
-                              e1=row.E1,
-                              e2=row.E2,
-                              fint=row.FINT,
-                              fintx=row.FINTX)
+        return elements.RBend(
+            eid=row.NAME,
+            l=row.L,
+            angle=row.ANGLE,
+            k1=row.K1L / row.L,
+            k2=row.K2L / row.L,
+            tilt=row.TILT,
+            e1=row.E1,
+            e2=row.E2,
+            fint=row.FINT,
+            fintx=row.FINTX,
+        )
 
     def make_quadrupole(self, row):
-        return elements.Quadrupole(eid=row.NAME,
-                                   l=row.L,
-                                   k1=row.K1L/row.L,
-                                   tilt=row.TILT)
+        return elements.Quadrupole(
+            eid=row.NAME, l=row.L, k1=row.K1L / row.L, tilt=row.TILT
+        )
 
     def make_sextupole(self, row):
-        return elements.Sextupole(eid=row.NAME,
-                                  l=row.L,
-                                  k2=row.K2L/row.L,
-                                  tilt=row.TILT)
+        return elements.Sextupole(
+            eid=row.NAME, l=row.L, k2=row.K2L / row.L, tilt=row.TILT
+        )
 
     def make_octupole(self, row):
-        return elements.Octupole(eid=row.NAME,
-                                 l=row.L,
-                                 k3=row.K3L/row.L,
-                                 tilt=row.TILT)
+        return elements.Octupole(
+            eid=row.NAME, l=row.L, k3=row.K3L / row.L, tilt=row.TILT
+        )
 
     def make_vkicker(self, row):
-        return elements.Vcor(eid=row.NAME,
-                             l=row.L,
-                             angle=row.VKICK)
+        return elements.Vcor(eid=row.NAME, l=row.L, angle=row.VKICK)
+
     def make_hkicker(self, row):
-        return elements.Hcor(eid=row.NAME,
-                             l=row.L,
-                             angle=row.HKICK)
+        return elements.Hcor(eid=row.NAME, l=row.L, angle=row.HKICK)

@@ -1,7 +1,8 @@
-from ocelot.cpbd.beam import ParticleArray
-from ocelot.common.globals import m_e_eV
 import numpy as np
 import pytest
+
+from ocelot.common.globals import m_e_eV
+from ocelot.cpbd.beam import ParticleArray
 
 try:
     import pmd_beamphysics as pmd
@@ -13,7 +14,8 @@ else:
 
 # Define decorator to skip tests if pmd_beamphysics is not installed.
 only_if_pmd_installed = pytest.mark.skipif(
-    not IS_PMD_INSTALLED, reason='PMD required to run tests')
+    not IS_PMD_INSTALLED, reason="PMD required to run tests"
+)
 
 
 # Toy data for instantiating a ParticleGroup

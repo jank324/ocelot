@@ -1,23 +1,24 @@
-from ocelot.cpbd.elements.element import Element
-from ocelot.cpbd.elements.marker import Marker
-from ocelot.cpbd.elements.drift import Drift
-from ocelot.cpbd.elements.monitor import Monitor
-from ocelot.cpbd.elements.undulator import Undulator
-from ocelot.cpbd.elements.unknown_element import UnknownElement
-from ocelot.cpbd.elements.matrix import Matrix
-from ocelot.cpbd.elements.bend import Bend
-from ocelot.cpbd.elements.sbend import SBend
-from ocelot.cpbd.elements.rbend import RBend
-from ocelot.cpbd.latticeIO import LatticeIO
-from ocelot.cpbd.transformations.transfer_map import TransferMap
-from ocelot.cpbd.optics import lattice_transfer_map
-from ocelot.cpbd.tm_utils import transfer_maps_mult
-
 import logging
 import re
 from collections import defaultdict
-from typing import Mapping, Sequence, Tuple, Callable, Any, Generator, Iterator
+from typing import Any, Callable, Generator, Iterator, Mapping, Sequence, Tuple
+
 import numpy as np
+
+from ocelot.cpbd.elements.bend import Bend
+from ocelot.cpbd.elements.drift import Drift
+from ocelot.cpbd.elements.element import Element
+from ocelot.cpbd.elements.marker import Marker
+from ocelot.cpbd.elements.matrix import Matrix
+from ocelot.cpbd.elements.monitor import Monitor
+from ocelot.cpbd.elements.rbend import RBend
+from ocelot.cpbd.elements.sbend import SBend
+from ocelot.cpbd.elements.undulator import Undulator
+from ocelot.cpbd.elements.unknown_element import UnknownElement
+from ocelot.cpbd.latticeIO import LatticeIO
+from ocelot.cpbd.optics import lattice_transfer_map
+from ocelot.cpbd.tm_utils import transfer_maps_mult
+from ocelot.cpbd.transformations.transfer_map import TransferMap
 
 _logger = logging.getLogger(__name__)
 
@@ -36,29 +37,56 @@ def lattice_format_converter(elements):
     s_pos = 0.0
     for element in elements:
         element_start = element[1] - element[0].l / 2.0
-        if element_start < s_pos - 1.0e-14:  # 1.0e-14 is used as crutch for precision of float
+        if (
+            element_start < s_pos - 1.0e-14
+        ):  # 1.0e-14 is used as crutch for precision of float
             if element[0].l == 0.0:
-
                 if s_pos - element_start > 1.0e-2:
-                    print("************** WARNING! Element " + element[0].id + " was deleted")
+                    print(
+                        "************** WARNING! Element "
+                        + element[0].id
+                        + " was deleted"
+                    )
                     continue
                 element[1] = s_pos
-                print("************** WARNING! Element " + element[0].id + " was moved from " + str(element_start) +
-                      " to " + str(s_pos))
+                print(
+                    "************** WARNING! Element "
+                    + element[0].id
+                    + " was moved from "
+                    + str(element_start)
+                    + " to "
+                    + str(s_pos)
+                )
             else:
                 dl = element[0].l / 2.0 - element[1] + s_pos
-                if cell[-1].__class__ == Marker and cell[-2].__class__ == Drift and cell[-2].l > dl:
+                if (
+                    cell[-1].__class__ == Marker
+                    and cell[-2].__class__ == Drift
+                    and cell[-2].l > dl
+                ):
                     cell[-2].l -= dl
-                    print("************** WARNING! Element " + cell[-1].id + " was deleted")
+                    print(
+                        "************** WARNING! Element "
+                        + cell[-1].id
+                        + " was deleted"
+                    )
                     cell.pop()
                 else:
-                    print("************** ERROR! Element " + element[0].id + " has bad position (overlapping?)")
+                    print(
+                        "************** ERROR! Element "
+                        + element[0].id
+                        + " has bad position (overlapping?)"
+                    )
                     exit()
 
-        if element_start > s_pos + 1.0e-12:  # 1.0e-12 is used as crutch for precision of float
+        if (
+            element_start > s_pos + 1.0e-12
+        ):  # 1.0e-12 is used as crutch for precision of float
             drift_num += 1
-            drift_l = round(element_start - s_pos, 10)  # round() is used as crutch for precision of float
-            drift_eid = 'D_' + str(drift_num)
+            drift_l = round(
+                element_start - s_pos, 10
+            )  # round() is used as crutch for precision of float
+            drift_eid = "D_" + str(drift_num)
             cell.append(Drift(l=drift_l, eid=drift_eid))
 
         cell.append(element[0])
@@ -66,7 +94,7 @@ def lattice_format_converter(elements):
     return tuple(cell)
 
 
-def merger(lat, remaining_types=None, remaining_elems=None, init_energy=0.):
+def merger(lat, remaining_types=None, remaining_elems=None, init_energy=0.0):
     """
     Function to compress the lattice excluding elements by type or by individual elements
 
@@ -86,7 +114,11 @@ def merger(lat, remaining_types=None, remaining_elems=None, init_energy=0.):
     lattice_analysis = []
     merged_elems = []
     for elem in lat.sequence:
-        if elem.__class__ in remaining_types or elem.id in remaining_elems or elem in remaining_elems:
+        if (
+            elem.__class__ in remaining_types
+            or elem.id in remaining_elems
+            or elem in remaining_elems
+        ):
             lattice_analysis.append(merged_elems)
             merged_elems = []
             lattice_analysis.append([elem])
@@ -105,13 +137,19 @@ def merger(lat, remaining_types=None, remaining_elems=None, init_energy=0.):
         elif len(elem_list) == 0:
             continue
         else:
-            magnetic_elems = [elem for elem in elem_list if elem.__class__ not in [Marker, Drift, Monitor]]
+            magnetic_elems = [
+                elem
+                for elem in elem_list
+                if elem.__class__ not in [Marker, Drift, Monitor]
+            ]
             if len(magnetic_elems) == 0:
                 total_len = np.sum([elem.l for elem in elem_list])
                 d = Drift(l=total_len)
                 seq.append(d)
             else:
-                delta_e = np.sum([tm.get_delta_e() for elem in elem_list for tm in elem.tms])
+                delta_e = np.sum(
+                    [tm.get_delta_e() for elem in elem_list for tm in elem.tms]
+                )
                 lattice = MagneticLattice(elem_list, method=lat.method)
                 m = Matrix()
                 m.b, m.r, m.t = lattice.transfer_maps(energy=E)
@@ -150,8 +188,10 @@ def flatten(iterable: Iterator[Any]) -> Generator[Any, None, None]:
     try:
         yield from _flatten(iterable)
     except RecursionError:
-        raise RecursionError("Maximum recusion reached.  Possibly trying"
-                             " to flatten an infinitely nested iterable.")
+        raise RecursionError(
+            "Maximum recusion reached.  Possibly trying"
+            " to flatten an infinitely nested iterable."
+        )
 
 
 class MagneticLattice:
@@ -170,7 +210,7 @@ class MagneticLattice:
 
     def __init__(self, sequence, start=None, stop=None, method=None):
         if method is None:
-            method = {'global': TransferMap}
+            method = {"global": TransferMap}
         if isinstance(method, dict):
             self.method = method
         else:
@@ -200,7 +240,7 @@ class MagneticLattice:
             else:
                 sequence = self.sequence[id1:]
         except:
-            print('cannot construct sequence, element not found')
+            print("cannot construct sequence, element not found")
             raise
         return sequence
 
@@ -225,15 +265,16 @@ class MagneticLattice:
             if tm_class_type:
                 element.set_tm(tm_class_type)
             else:
-                tm_class_type = self.method.get('global')
+                tm_class_type = self.method.get("global")
                 if tm_class_type:
                     element.set_tm(tm_class_type)
 
-            _logger.debug(f"update: {','.join([tm.__class__.__name__ for tm in element.tms])}")
+            _logger.debug(
+                f"update: {','.join([tm.__class__.__name__ for tm in element.tms])}"
+            )
         return self
 
     def update_endings(self, lat_index, element, body_elements, element_util):
-
         if element_util.suffix_1 in element.id:
             body = self.sequence[lat_index + 1]
             if body.__class__ not in body_elements:
@@ -248,12 +289,16 @@ class MagneticLattice:
             element_util.update_last(element, body)
         else:
             _logger.error(
-                element.__class__.__name__ + " is not updated. Use standard function to create and update MagneticLattice")
+                element.__class__.__name__
+                + " is not updated. Use standard function to create and update MagneticLattice"
+            )
 
     def __str__(self):
         line = "LATTICE: length = " + str(self.totalLen) + " m \n"
         for e in self.sequence:
-            line += "{0:15} length: {1:5.2f}      id: {2:10}\n".format(e.__class__.__name__, e.l, e.id)
+            line += "{0:15} length: {1:5.2f}      id: {2:10}\n".format(
+                e.__class__.__name__, e.l, e.id
+            )
         return line
 
     def find_indices(self, element):
@@ -280,7 +325,9 @@ class MagneticLattice:
                 else:
                     self.sequence[i] = drifts[elem.l]
 
-    def save_as_py_file(self, file_name: str, tws0=None, remove_rep_drifts=True, power_supply=False):
+    def save_as_py_file(
+        self, file_name: str, tws0=None, remove_rep_drifts=True, power_supply=False
+    ):
         """
         Saves the lattice in a python file.
         :param file_name: path and python file name where the lattice will be stored
@@ -290,8 +337,13 @@ class MagneticLattice:
         :param power_supply: Writes the power supply ids in the file
         :return: None
         """
-        LatticeIO.save_lattice(self, tws0=tws0, file_name=file_name, remove_rep_drifts=remove_rep_drifts,
-                               power_supply=power_supply)
+        LatticeIO.save_lattice(
+            self,
+            tws0=tws0,
+            file_name=file_name,
+            remove_rep_drifts=remove_rep_drifts,
+            power_supply=power_supply,
+        )
 
     def transfer_maps(self, energy, output_at_each_step: bool = False):
         """
@@ -347,9 +399,8 @@ def merge_drifts(cell):
     :return: new list of elements
     """
     new_cell = []
-    L = 0.
+    L = 0.0
     for elem in cell:
-
         if elem.__class__ in [Drift, UnknownElement]:
             L += elem.l
         else:
@@ -357,14 +408,21 @@ def merge_drifts(cell):
                 new_elem = Drift(l=L)
                 new_cell.append(new_elem)
             new_cell.append(elem)
-            L = 0.
+            L = 0.0
     if L != 0:
         new_cell.append(Drift(l=L))
-    print("Merge drift -> Element numbers: before -> after: ", len(cell), "->", len(new_cell))
+    print(
+        "Merge drift -> Element numbers: before -> after: ",
+        len(cell),
+        "->",
+        len(new_cell),
+    )
     return new_cell
 
 
-def exclude_zero_length_element(cell, elem_type=[UnknownElement, Marker], except_elems=[]):
+def exclude_zero_length_element(
+    cell, elem_type=[UnknownElement, Marker], except_elems=[]
+):
     """
     Exclude zero length elements some types in elem_type
 
@@ -378,12 +436,18 @@ def exclude_zero_length_element(cell, elem_type=[UnknownElement, Marker], except
         if elem.__class__ in elem_type and elem.l == 0 and elem not in except_elems:
             continue
         new_cell.append(elem)
-    print("Exclude elements -> Element numbers: before -> after: ", len(cell), "->", len(new_cell))
+    print(
+        "Exclude elements -> Element numbers: before -> after: ",
+        len(cell),
+        "->",
+        len(new_cell),
+    )
     return new_cell
 
 
-def insert_markers_by_name(sequence, string: str, regex=False,
-                           before=True, after=True) -> MarkersInsertionReturnType:
+def insert_markers_by_name(
+    sequence, string: str, regex=False, before=True, after=True
+) -> MarkersInsertionReturnType:
     """Insert markers either side of elements in the magnetic lattice, selected
     based on the element name (either equality or with a regular expression).
     By default markers are placed either side of the matched elements.
@@ -400,6 +464,7 @@ def insert_markers_by_name(sequence, string: str, regex=False,
 
     """
     if regex:
+
         def fre(ele):
             return bool(re.match(string, ele.id))
 
@@ -411,8 +476,9 @@ def insert_markers_by_name(sequence, string: str, regex=False,
     return insert_markers_by_predicate(sequence, f, before=before, after=after)
 
 
-def insert_markers_by_type(sequence, magnet_type: Element, before=True, after=True
-                           ) -> MarkersInsertionReturnType:
+def insert_markers_by_type(
+    sequence, magnet_type: Element, before=True, after=True
+) -> MarkersInsertionReturnType:
     """Insert markers either side of elements in the magnetic lattice, selected
     based on the element
     By default markers are placed either side of the matched elements.
@@ -431,9 +497,9 @@ def insert_markers_by_type(sequence, magnet_type: Element, before=True, after=Tr
     return insert_markers_by_predicate(sequence, f, before=before, after=after)
 
 
-def insert_markers_by_predicate(sequence, predicate: Callable[[Element], bool],
-                                before=True, after=True
-                                ) -> MarkersInsertionReturnType:
+def insert_markers_by_predicate(
+    sequence, predicate: Callable[[Element], bool], before=True, after=True
+) -> MarkersInsertionReturnType:
     """Insert markers either side of elements in the magnetic lattice, selected
     based on the the provided predicate function.
 

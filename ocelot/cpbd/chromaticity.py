@@ -1,24 +1,26 @@
+__author__ = "Sergey Tomin"
 
-__author__ = 'Sergey Tomin'
-
-from scipy.integrate import simps
 from numpy.linalg import eig
+from scipy.integrate import simps
 
-from ocelot.cpbd.optics import *
 from ocelot.cpbd.beam import *
 from ocelot.cpbd.elements import *
+from ocelot.cpbd.optics import *
 from ocelot.cpbd.transformations.transformation import TMTypes
 
 
 def natural_chromaticity(lattice, tws_0, nsuperperiod=1):
     edge_ksi_x, edge_ksi_y = 0, 0
     tws_elem = tws_0
-    #M = TransferMap()
-    integr_x = 0.
-    integr_y = 0.
+    # M = TransferMap()
+    integr_x = 0.0
+    integr_y = 0.0
     for elem in lattice.sequence:
         for tm in elem.first_order_tms:
-            if elem.__class__ in [SBend, RBend, Bend, Quadrupole] and tm.tm_type == TMTypes.MAIN:
+            if (
+                elem.__class__ in [SBend, RBend, Bend, Quadrupole]
+                and tm.tm_type == TMTypes.MAIN
+            ):
                 bx = []
                 by = []
                 k = []
@@ -34,31 +36,31 @@ def natural_chromaticity(lattice, tws_0, nsuperperiod=1):
                     k.append(elem.k1)
                     # print elem.l
                     if elem.__class__ != Quadrupole and elem.l != 0:
-                        h.append(elem.angle/elem.l)
+                        h.append(elem.angle / elem.l)
                     else:
-                        h.append(0.)
+                        h.append(0.0)
                     Z.append(z)
 
-                H2 = np.array(h)*np.array(h)
-                X = np.array(bx)*(np.array(k) + H2)
-                Y = -np.array(by)*np.array(k)
+                H2 = np.array(h) * np.array(h)
+                X = np.array(bx) * (np.array(k) + H2)
+                Y = -np.array(by) * np.array(k)
                 integr_x += simps(X, Z)
                 integr_y += simps(Y, Z)
             elif elem.__class__ == Multipole:
                 twiss_z = tm * tws_elem
-                integr_x += twiss_z.beta_x*elem.kn[1]
-                integr_y -= twiss_z.beta_y*elem.kn[1]
+                integr_x += twiss_z.beta_x * elem.kn[1]
+                integr_y -= twiss_z.beta_y * elem.kn[1]
             tws_elem = tm * tws_elem
-    ksi_x = -(integr_x - edge_ksi_x)/(4*pi)
-    ksi_y = -(integr_y - edge_ksi_y)/(4*pi)
-    return np.array([ksi_x*nsuperperiod, ksi_y*nsuperperiod])
+    ksi_x = -(integr_x - edge_ksi_x) / (4 * pi)
+    ksi_y = -(integr_y - edge_ksi_y) / (4 * pi)
+    return np.array([ksi_x * nsuperperiod, ksi_y * nsuperperiod])
 
 
 def sextupole_chromaticity(lattice, tws0, nsuperperiod=1):
     tws_elem = tws0
 
-    integr_x = 0.
-    integr_y = 0.
+    integr_x = 0.0
+    integr_y = 0.0
     for elem in lattice.sequence:
         if elem.__class__ == Sextupole:
             bx = []
@@ -67,30 +69,34 @@ def sextupole_chromaticity(lattice, tws0, nsuperperiod=1):
             Z = []
 
             for z in np.linspace(0, elem.l, num=5, endpoint=True):
-                delta_tms = elem.get_section_tms(start_l=0.0, delta_l=z, first_order_only=True)
+                delta_tms = elem.get_section_tms(
+                    start_l=0.0, delta_l=z, first_order_only=True
+                )
                 twiss_z = tws_elem
                 for tm in delta_tms:
-                    twiss_z = tm*twiss_z
+                    twiss_z = tm * twiss_z
                     bx.append(twiss_z.beta_x)
                     by.append(twiss_z.beta_y)
                     Dx.append(twiss_z.Dx)
 
                     Z.append(z)
 
-            X = np.array(bx)*np.array(Dx)
-            Y = np.array(by)*np.array(Dx)
-            integr_x += simps(X, Z)*elem.k2
-            integr_y += simps(Y, Z)*elem.k2
+            X = np.array(bx) * np.array(Dx)
+            Y = np.array(by) * np.array(Dx)
+            integr_x += simps(X, Z) * elem.k2
+            integr_y += simps(Y, Z) * elem.k2
 
         for tm in elem.first_order_tms:
-            tws_elem = tm*tws_elem
-    chrom_sex_x = (integr_x)/(4*pi)
-    chrom_sex_y = -(integr_y)/(4*pi)
-    return np.array([chrom_sex_x*nsuperperiod, chrom_sex_y*nsuperperiod])
+            tws_elem = tm * tws_elem
+    chrom_sex_x = (integr_x) / (4 * pi)
+    chrom_sex_y = -(integr_y) / (4 * pi)
+    return np.array([chrom_sex_x * nsuperperiod, chrom_sex_y * nsuperperiod])
 
 
 def chromaticity(lattice, tws_0, nsuperperiod=1):
-    return natural_chromaticity(lattice, tws_0, nsuperperiod) + sextupole_chromaticity(lattice, tws_0, nsuperperiod)
+    return natural_chromaticity(lattice, tws_0, nsuperperiod) + sextupole_chromaticity(
+        lattice, tws_0, nsuperperiod
+    )
 
 
 def sextupole_id(lattice):
@@ -99,7 +105,7 @@ def sextupole_id(lattice):
         if element.__class__ == Sextupole:
             if element.id == None:
                 print("Please add ID to sextupole")
-            sex[element.id] = element.k2*element.l
+            sex[element.id] = element.k2 * element.l
         if element.__class__ == Multipole and element.n == 3:
             if element.id == None:
                 print("Please add ID to sextupole")
@@ -107,37 +113,37 @@ def sextupole_id(lattice):
     sex_name = sex
 
     if len(sex_name) < 2:
-        exit("Only " + str(len(sex_name))+" families of sextupole are found")
+        exit("Only " + str(len(sex_name)) + " families of sextupole are found")
     if len(sex_name) > 2:
         exit("more than two families of sextupole")
     return sex
 
 
 def calculate_sex_strength(lattice, tws_0, ksi, ksi_comp, nsuperperiod):
-    '''
+    """
     compensation with two families
-    '''
+    """
     ksi_x, ksi_y = ksi
     ksi_x_comp, ksi_y_comp = ksi_comp
     sex = sextupole_id(lattice)
     sex_name = list(sex)
     print("Chromaticity compensation: Before: ", sex)
-    m1x = 0.
-    m1y = 0.
-    m2x = 0.
-    m2y = 0.
-    #L = 0.
+    m1x = 0.0
+    m1y = 0.0
+    m2x = 0.0
+    m2y = 0.0
+    # L = 0.
     tws_elem = tws_0
     sex_dict_stg = {}
     for element in lattice.sequence:
         for tm in element.first_order_tms:
             # if element.type == "sextupole":
             if element.id == sex_name[0]:
-                m1x += tws_elem.Dx*tws_elem.beta_x/(4*pi)*nsuperperiod
-                m1y -= tws_elem.Dx*tws_elem.beta_y/(4*pi)*nsuperperiod
+                m1x += tws_elem.Dx * tws_elem.beta_x / (4 * pi) * nsuperperiod
+                m1y -= tws_elem.Dx * tws_elem.beta_y / (4 * pi) * nsuperperiod
             elif element.id == sex_name[1]:
-                m2x += tws_elem.Dx*tws_elem.beta_x/(4*pi)*nsuperperiod
-                m2y -= tws_elem.Dx*tws_elem.beta_y/(4*pi)*nsuperperiod
+                m2x += tws_elem.Dx * tws_elem.beta_x / (4 * pi) * nsuperperiod
+                m2y -= tws_elem.Dx * tws_elem.beta_y / (4 * pi) * nsuperperiod
             tws_elem = tm * tws_elem
     M = np.array([[m1x, m2x], [m1y, m2y]])
     ksi = np.array([[ksi_x_comp - ksi_x], [ksi_y_comp - ksi_y]])
@@ -147,10 +153,10 @@ def calculate_sex_strength(lattice, tws_0, ksi, ksi_comp, nsuperperiod):
     return sex_dict_stg
 
 
-def compensate_chromaticity(lattice,  ksi_x_comp=0, ksi_y_comp=0,  nsuperperiod=1):
-    '''
+def compensate_chromaticity(lattice, ksi_x_comp=0, ksi_y_comp=0, nsuperperiod=1):
+    """
     old chromaticity compensation with 2 sextupole families
-    '''
+    """
     tws0 = Twiss()
     tws = twiss(lattice, tws0)
     tws_0 = tws[0]
@@ -166,10 +172,10 @@ def compensate_chromaticity(lattice,  ksi_x_comp=0, ksi_y_comp=0,  nsuperperiod=
         if element.__class__ == Sextupole:
             if element.id == sex_name[0]:
                 element.k2 = sex_dict_stg[element.id] / element.l
-                #if element.l != 0: element.k2 = element.ms / element.l
+                # if element.l != 0: element.k2 = element.ms / element.l
             elif element.id == sex_name[1]:
                 element.k2 = sex_dict_stg[element.id] / element.l
-                #if element.l != 0: element.k2 = element.ms / element.l
+                # if element.l != 0: element.k2 = element.ms / element.l
         if element.__class__ == Multipole and element.n == 3:
             if element.id == sex_name[0]:
                 element.kn[2] = sex_dict_stg[element.id]
@@ -190,7 +196,7 @@ def DZ(lattice, energy):
 
     x = np.dot(R, [1, 1, 1, 1, 0, 0])
     x2 = np.dot(R, [1, 1, 1, 1, 0, 0.001])
-    #print (x2 - x)/0.001
+    # print (x2 - x)/0.001
     # print R
 
     w, v = eig(R)
@@ -203,14 +209,14 @@ def DZ(lattice, energy):
     print("DZ0 = ", DZ)
     DR_new = np.zeros(6)
     DZ0 = deepcopy(DZ)
-    DQ1n = 0.
-    DQ2n = 0.
+    DQ1n = 0.0
+    DQ2n = 0.0
     R_lat = np.eye(6)
     for elem in lattice.sequence:
         R = elem.transfer_map.R(energy)
         R_lat = np.dot(R, R_lat)
-        #cosmx = (R[0, 0] + R[1, 1])/2.
-        #cosmy = (R[2, 2] + R[3, 3])/2.
+        # cosmx = (R[0, 0] + R[1, 1])/2.
+        # cosmy = (R[2, 2] + R[3, 3])/2.
 
         # if abs(cosmx) >= 1 or abs(cosmy) >= 1:
         #    logger.warn("************ periodic solution does not exist. return None ***********")
@@ -224,31 +230,31 @@ def DZ(lattice, energy):
         T = elem.transfer_map.t_mat_z_e(elem.l, energy)
         for i in range(6):
             for j in range(6):
-                t = 0.
+                t = 0.0
                 for m in range(6):
-                    t += T[i, j, m]*DZ[m]
-                DR[i, j] = 2*t  # np.dot(lattice.T[i, j, :], DZ)
+                    t += T[i, j, m] * DZ[m]
+                DR[i, j] = 2 * t  # np.dot(lattice.T[i, j, :], DZ)
         print(elem.l)
         print(DR)
         DR_new = DR + DR_new
-        #DQ1n += (DR[0, 0] + DR[1, 1])/(2*sin(tws[-1].mux))/2/pi
-        #DQ2n += (DR[2, 2] + DR[3, 3])/(2*sin(tws[-1].muy))/2/pi
-    print("DZ = ",  DZ)
+        # DQ1n += (DR[0, 0] + DR[1, 1])/(2*sin(tws[-1].mux))/2/pi
+        # DQ2n += (DR[2, 2] + DR[3, 3])/(2*sin(tws[-1].muy))/2/pi
+    print("DZ = ", DZ)
     # print "DZ2 = ", dot(R, DZ)
-    print(DQ1n*6, DQ2n*6)
+    print(DQ1n * 6, DQ2n * 6)
     DR = np.zeros((6, 6))
 
     for i in range(6):
         for j in range(6):
-            t = 0.
+            t = 0.0
             for m in range(6):
-                t += lattice.T[i, j, m]*DZ[m]
-            DR[i, j] = 2*t  # np.dot(lattice.T[i, j, :], DZ)
+                t += lattice.T[i, j, m] * DZ[m]
+            DR[i, j] = 2 * t  # np.dot(lattice.T[i, j, :], DZ)
     # print DR
     DR = DR_new
 
-    DQ1 = (DR[0, 0] + DR[1, 1])/(2*sin(tws[-1].mux))/2/pi
-    DQ2 = (DR[2, 2] + DR[3, 3])/(2*sin(tws[-1].muy))/2/pi
-    print(DQ1*6, DQ2*6)
-    print(tws[-1].mux/2/pi*6)
-    print(tws[-1].muy/2/pi*6)
+    DQ1 = (DR[0, 0] + DR[1, 1]) / (2 * sin(tws[-1].mux)) / 2 / pi
+    DQ2 = (DR[2, 2] + DR[3, 3]) / (2 * sin(tws[-1].muy)) / 2 / pi
+    print(DQ1 * 6, DQ2 * 6)
+    print(tws[-1].mux / 2 / pi * 6)
+    print(tws[-1].muy / 2 / pi * 6)

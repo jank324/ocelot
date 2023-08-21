@@ -1,11 +1,11 @@
-from ocelot.cpbd.io import save_particle_array
-from ocelot.common.globals import *
 import numpy as np
-from ocelot.cpbd.beam import Twiss, beam_matching
 from scipy import optimize
-from ocelot.utils.acc_utils import slice_bunching
+
+from ocelot.common.globals import *
 from ocelot.common.ocelog import *
-from ocelot.cpbd.beam import ParticleArray
+from ocelot.cpbd.beam import ParticleArray, Twiss, beam_matching
+from ocelot.cpbd.io import save_particle_array
+from ocelot.utils.acc_utils import slice_bunching
 
 _logger = logging.getLogger(__name__)
 
@@ -83,6 +83,7 @@ class SaveBeam(PhysProc):
 class CopyBeam(PhysProc):
     """Physics process that copies the ParticleArray instance when applied.  Makes
     most sense to be attached to zero-length elements (e.g. Marker instances)."""
+
     def __init__(self, name: str = ""):
         super().__init__()
         self.name = name
@@ -183,7 +184,7 @@ class LaserModulator(PhysProc):
         :return: wavelength in [m]
         """
         gamma = energy / m_e_GeV
-        return self.lperiod / (2 * gamma ** 2) * (1 + self.Ku ** 2 / 2)
+        return self.lperiod / (2 * gamma**2) * (1 + self.Ku**2 / 2)
 
     def r56(self, energy):
         """
@@ -194,7 +195,7 @@ class LaserModulator(PhysProc):
         """
         gamma = energy / m_e_GeV
         beta = 1 / np.sqrt(1.0 - 1.0 / (gamma * gamma))
-        r56 = - self.Lu / (gamma * beta) ** 2 * (1 + 0.5 * (self.Ku * beta) ** 2)
+        r56 = -self.Lu / (gamma * beta) ** 2 * (1 + 0.5 * (self.Ku * beta) ** 2)
         return r56
 
     def apply(self, p_array, dz):
@@ -202,17 +203,20 @@ class LaserModulator(PhysProc):
 
         L = self.s_stop - self.s_start
         if L == 0:
-            _logger.warning(" LaserModulator is not applied, undulator length =" + str(L))
+            _logger.warning(
+                " LaserModulator is not applied, undulator length =" + str(L)
+            )
             return
         else:
             if np.abs(self.Lu - L) > 1e-5:
                 _logger.warning(
                     " LaserModulator: undulator length ({}) is not equal the distance between Markers ({}). "
-                    "Distance between Markers is used".format(self.Lu, L))
+                    "Distance between Markers is used".format(self.Lu, L)
+                )
 
         lbda_ph = self.lambda_ph(p_array.E)
         k_ph = 2 * np.pi / lbda_ph
-        pc = np.sqrt(p_array.E ** 2 - m_e_GeV ** 2)
+        pc = np.sqrt(p_array.E**2 - m_e_GeV**2)
 
         A = self.dE / (pc) * dz / L
         dx = p_array.x()[:] - self.x_mean
@@ -222,29 +226,39 @@ class LaserModulator(PhysProc):
         dtau = p_array.tau()[:] - tau_mean
 
         if self.z_waist is None:
-            p_array.p()[:] += A * np.exp(-dtau ** 2 / (2 * self.sigma_l ** 2)) * np.cos(
-                k_ph * p_array.tau()[:]) * np.exp(
-                -0.25 * dx ** 2 / self.sigma_x ** 2 - 0.25 * dy ** 2 / self.sigma_y ** 2)
+            p_array.p()[:] += (
+                A
+                * np.exp(-(dtau**2) / (2 * self.sigma_l**2))
+                * np.cos(k_ph * p_array.tau()[:])
+                * np.exp(
+                    -0.25 * dx**2 / self.sigma_x**2
+                    - 0.25 * dy**2 / self.sigma_y**2
+                )
+            )
             if self.include_r56:
                 p_array.tau()[:] += self.r56(p_array.E) * p_array.p()[:] * dz / L
 
         else:
-
             z_waist_abs = self.s_start + L / 2 + self.z_waist
             z = self.z0 - p_array.tau()[:] - z_waist_abs
-            zRx = 2 * k_ph * self.sigma_x ** 2
-            zRy = 2 * k_ph * self.sigma_y ** 2
+            zRx = 2 * k_ph * self.sigma_x**2
+            zRy = 2 * k_ph * self.sigma_y**2
             p = 2 * complex(0, 1) * z / k_ph
-            N = np.exp(-dx ** 2 / (4 * self.sigma_x ** 2 - p) - dy ** 2 / (4 * self.sigma_y ** 2 - p))
+            N = np.exp(
+                -(dx**2) / (4 * self.sigma_x**2 - p)
+                - dy**2 / (4 * self.sigma_y**2 - p)
+            )
             D = np.sqrt((1 - complex(0, 1) * z / zRx) * (1 - complex(0, 1) * z / zRy))
-            V = np.real(N / D * np.exp(- complex(0, 1) * k_ph * p_array.tau()[:]))
-            p_array.p()[:] += A * V * np.exp(-dtau ** 2 / (2 * self.sigma_l ** 2))
+            V = np.real(N / D * np.exp(-complex(0, 1) * k_ph * p_array.tau()[:]))
+            p_array.p()[:] += A * V * np.exp(-(dtau**2) / (2 * self.sigma_l**2))
 
 
 class LaserHeater(LaserModulator):
     def __init__(self, step=1):
         LaserModulator.__init__(self, step)
-        _logger.info("LaserHeater physics process is obsolete. Use 'LaserModulator' instead.")
+        _logger.info(
+            "LaserHeater physics process is obsolete. Use 'LaserModulator' instead."
+        )
 
 
 class PhaseSpaceAperture(PhysProc):
@@ -286,7 +300,9 @@ class PhaseSpaceAperture(PhysProc):
             tau0 = np.mean(tau)
             tau = tau - tau0
             sig = np.std(tau)
-            inds = np.argwhere(np.logical_or(tau < sig * self.taumin, tau > sig * self.taumax))
+            inds = np.argwhere(
+                np.logical_or(tau < sig * self.taumin, tau > sig * self.taumax)
+            )
             inds = inds.reshape(inds.shape[0])
             p_array.delete_particles(inds)
 
@@ -295,7 +311,9 @@ class PhaseSpaceAperture(PhysProc):
             x0 = np.mean(x)
             x = x - x0
             sigx = np.std(x)
-            inds = np.argwhere(np.logical_or(x < sigx * self.xmin, x > sigx * self.xmax))
+            inds = np.argwhere(
+                np.logical_or(x < sigx * self.xmin, x > sigx * self.xmax)
+            )
             inds = inds.reshape(inds.shape[0])
             p_array.delete_particles(inds)
 
@@ -304,7 +322,9 @@ class PhaseSpaceAperture(PhysProc):
             y0 = np.mean(y)
             y = y - y0
             sigy = np.std(y)
-            inds = np.argwhere(np.logical_or(y < sigy * self.ymin, y > sigy * self.ymax))
+            inds = np.argwhere(
+                np.logical_or(y < sigy * self.ymin, y > sigy * self.ymax)
+            )
             inds = inds.reshape(inds.shape[0])
             p_array.delete_particles(inds)
 
@@ -355,18 +375,21 @@ class EllipticalAperture(PhysProc):
     def __init__(self, xmax=np.inf, ymax=None, dx=0.0, dy=0.0, step=1):
         PhysProc.__init__(self, step)
         self.xmax = xmax
-        self.ymax = (ymax if not ymax is None else xmax)
+        self.ymax = ymax if not ymax is None else xmax
         self.dx = dx
         self.dy = dy
 
     def apply(self, p_array, dz):
         x = p_array.x()
         y = p_array.y()
-        inds = np.argwhere((x - self.dx) ** 2 / self.xmax ** 2 + (y - self.dy) ** 2 / self.ymax ** 2 > 1.0)
+        inds = np.argwhere(
+            (x - self.dx) ** 2 / self.xmax**2 + (y - self.dy) ** 2 / self.ymax**2
+            > 1.0
+        )
         inds = inds.reshape(inds.shape[0])
         p_array.delete_particles(inds)
 
-        
+
 class BeamTransform(PhysProc):
     """
     Beam matching
@@ -382,7 +405,7 @@ class BeamTransform(PhysProc):
         :param slice: None, if "Imax" or "Emax" beam matched to that slice and 'bound' param is ignored
         """
         PhysProc.__init__(self)
-        self.tws = tws      # Twiss
+        self.tws = tws  # Twiss
         self.x_opt = x_opt  # [alpha, beta, mu (phase advance)] - obsolete
         self.y_opt = y_opt  # [alpha, beta, mu (phase advance)] - obsolete
         self.step = 1
@@ -405,7 +428,14 @@ class BeamTransform(PhysProc):
         _logger.debug("BeamTransform: apply")
         self.x_opt = [self.twiss.alpha_x, self.twiss.beta_x, self.twiss.mux]
         self.y_opt = [self.twiss.alpha_y, self.twiss.beta_y, self.twiss.muy]
-        beam_matching(p_array, self.bounds, self.x_opt, self.y_opt, self.remove_offsets, self.slice)
+        beam_matching(
+            p_array,
+            self.bounds,
+            self.x_opt,
+            self.y_opt,
+            self.remove_offsets,
+            self.slice,
+        )
 
 
 class SlottedFoil(PhysProc):
@@ -421,16 +451,19 @@ class SlottedFoil(PhysProc):
     :param ymin: -np.inf lower position of the foil slot [m]
     :param ymax: np.inf upper position of the foil slot [m]
     """
-    def __init__(self, dx, X0, xmin=-np.inf, xmax=np.inf, ymin=-np.inf, ymax=np.inf, step=1):
+
+    def __init__(
+        self, dx, X0, xmin=-np.inf, xmax=np.inf, ymin=-np.inf, ymax=np.inf, step=1
+    ):
         PhysProc.__init__(self, step)
         self.xmin = xmin  # in m
         self.xmax = xmax  # in m
 
         self.ymin = ymin  # in m
         self.ymax = ymax  # in m
-        self.z = 1        # charge number of the incident particle
-        self.dx = dx      # thickness of the foil in [um]
-        self.X0 = X0      # radiation length in [cm]
+        self.z = 1  # charge number of the incident particle
+        self.dx = dx  # thickness of the foil in [um]
+        self.X0 = X0  # radiation length in [cm]
 
     def scattered_particles(self, p_array):
         x = p_array.x()
@@ -450,13 +483,21 @@ class SlottedFoil(PhysProc):
         :param p_array: ParticleArray
         :return: theta - rms scattering angle
         """
-        p = np.sqrt(p_array.E**2 - m_e_GeV**2) * 1000  # MeV/c momentum of the particles
+        p = (
+            np.sqrt(p_array.E**2 - m_e_GeV**2) * 1000
+        )  # MeV/c momentum of the particles
         gamma = p_array.E / m_e_GeV
-        igamma2 = 0.
+        igamma2 = 0.0
         if gamma != 0:
-            igamma2 = 1. / (gamma * gamma)
-        beta = np.sqrt(1. - igamma2)
-        theta_rms = 13.6 / (beta * p) * self.z * np.sqrt(self.dx * 1e-4 / self.X0) * (1 + 0.038 * np.log(self.dx*1e-4 / self.X0))
+            igamma2 = 1.0 / (gamma * gamma)
+        beta = np.sqrt(1.0 - igamma2)
+        theta_rms = (
+            13.6
+            / (beta * p)
+            * self.z
+            * np.sqrt(self.dx * 1e-4 / self.X0)
+            * (1 + 0.038 * np.log(self.dx * 1e-4 / self.X0))
+        )
         return theta_rms
 
     def apply(self, p_array, dz):
@@ -466,7 +507,7 @@ class SlottedFoil(PhysProc):
         indeces = self.scattered_particles(p_array)
         n = len(indeces)
         thetas = np.random.normal(0, theta_rms, n)
-        alphas = np.random.uniform(0, 2*np.pi, n)
+        alphas = np.random.uniform(0, 2 * np.pi, n)
         p_array.px()[indeces] += np.cos(alphas) * thetas
         p_array.py()[indeces] += np.sin(alphas) * thetas
 
@@ -505,7 +546,9 @@ class SpontanRadEffects(PhysProc):
             self.lperiod = 2.0 * np.pi * np.abs(self.radius) / gamma * self.K
 
         if self.quant_diff:
-            sigma_Eq = self.sigma_gamma_quant(energy, dz, self.K, self.lperiod, self.type)
+            sigma_Eq = self.sigma_gamma_quant(
+                energy, dz, self.K, self.lperiod, self.type
+            )
             p_array.p()[:] += sigma_Eq * np.random.randn(p_array.n) * self.filling_coeff
 
         if self.energy_loss:
@@ -513,8 +556,8 @@ class SpontanRadEffects(PhysProc):
             p_array.p()[:] -= dE / energy * self.filling_coeff
 
     def energy_loss_und(self, energy, dz):
-        k = 4. * np.pi * np.pi / 3. * ro_e / m_e_GeV
-        U = k * energy ** 2 * self.K ** 2 * dz / self.lperiod ** 2
+        k = 4.0 * np.pi * np.pi / 3.0 * ro_e / m_e_GeV
+        U = k * energy**2 * self.K**2 * dz / self.lperiod**2
         return U
 
     @staticmethod
@@ -533,13 +576,15 @@ class SpontanRadEffects(PhysProc):
         k = 2 * np.pi / lperiod
 
         lambda_compt = h_eV_s / m_e_eV * speed_of_light  # m
-        lambda_compt_r = lambda_compt / 2. / pi
+        lambda_compt_r = lambda_compt / 2.0 / pi
         if type == "helical":
-            f = lambda K: 1.42 * K + 1. / (1 + 1.5 * K + 0.95 * K * K)
+            f = lambda K: 1.42 * K + 1.0 / (1 + 1.5 * K + 0.95 * K * K)
         else:
-            f = lambda K: 0.6 * K + 1. / (2 + 2.66 * K + 0.8 * K ** 2)
+            f = lambda K: 0.6 * K + 1.0 / (2 + 2.66 * K + 0.8 * K**2)
 
-        delta_Eq2 = 14 / 15. * lambda_compt_r * ro_e * gamma ** 4 * k ** 3 * K ** 2 * f(K) * dz
+        delta_Eq2 = (
+            14 / 15.0 * lambda_compt_r * ro_e * gamma**4 * k**3 * K**2 * f(K) * dz
+        )
         sigma_Eq = np.sqrt(delta_Eq2 / (gamma * gamma))
         return sigma_Eq
 
@@ -571,17 +616,27 @@ class BeamAnalysis(PhysProc):
         slice_min = bunch_c - self.lambda_mod * self.nlambdas
         slice_max = bunch_c + self.lambda_mod * self.nlambdas
 
-        indx = np.where(np.logical_and(np.greater_equal(p_array.tau(), slice_min),
-                                       np.less(p_array.tau(), slice_max)))[0]
+        indx = np.where(
+            np.logical_and(
+                np.greater_equal(p_array.tau(), slice_min),
+                np.less(p_array.tau(), slice_max),
+            )
+        )[0]
         p = p_array.p()[indx]
         tau = p_array.tau()[indx]
 
         sigma_x, sigma_y = np.std(p_array.x()[indx]), np.std(p_array.y()[indx])
         # sigma_px, sigma_py = np.std(p_array.px()[indx]), np.std(p_array.py()[indx])
-        params, params_covariance = optimize.curve_fit(test_func, tau, p, p0=[0.001, 0, 0, 0])
+        params, params_covariance = optimize.curve_fit(
+            test_func, tau, p, p0=[0.001, 0, 0, 0]
+        )
 
-        b = slice_bunching(tau, charge=np.sum(p_array.q_array[indx]), lambda_mod=self.lambda_mod,
-                           smooth_sigma=self.lambda_mod / 5)
+        b = slice_bunching(
+            tau,
+            charge=np.sum(p_array.q_array[indx]),
+            lambda_mod=self.lambda_mod,
+            smooth_sigma=self.lambda_mod / 5,
+        )
 
         self.p.append(params[0])
         self.phi.append(params[1])
@@ -595,8 +650,17 @@ class BeamAnalysis(PhysProc):
         # self.sigma_py.append(sigma_py)
 
     def finalize(self):
-        data = np.array([np.array(self.s), np.array(self.p), np.array(self.phi), np.array(self.energy),
-                         np.array(self.bunching), np.array(self.sigma_x), np.array(self.sigma_y)])
+        data = np.array(
+            [
+                np.array(self.s),
+                np.array(self.p),
+                np.array(self.phi),
+                np.array(self.energy),
+                np.array(self.bunching),
+                np.array(self.sigma_x),
+                np.array(self.sigma_y),
+            ]
+        )
         np.savetxt(self.filename, data)
 
 
@@ -605,7 +669,7 @@ class Chicane(PhysProc):
     simple physics process to simulate longitudinal dynamics in chicane
     """
 
-    def __init__(self, r56, t566=0.):
+    def __init__(self, r56, t566=0.0):
         PhysProc.__init__(self)
         self.r56 = r56
         self.t566 = t566
@@ -614,21 +678,24 @@ class Chicane(PhysProc):
         _logger.debug(" Chicane applied, r56 =" + str(self.r56))
 
         p_array.rparticles[4] += (
-                    self.r56 * p_array.rparticles[5] + self.t566 * p_array.rparticles[5] * p_array.rparticles[5])
+            self.r56 * p_array.rparticles[5]
+            + self.t566 * p_array.rparticles[5] * p_array.rparticles[5]
+        )
 
 
 class LatticeEnergyProfile(PhysProc):
     """
     The PhysProcess shifts the canonical momentum according to new reference energy Eref
     """
+
     def __init__(self, Eref):
         PhysProc.__init__(self)
         self.Eref = Eref
 
     def apply(self, p_array, dz=0):
         Eref_old = p_array.E
-        p0c_old = np.sqrt(Eref_old ** 2 - m_e_GeV ** 2)
-        p0c_new = np.sqrt(self.Eref ** 2 - m_e_GeV ** 2)
+        p0c_old = np.sqrt(Eref_old**2 - m_e_GeV**2)
+        p0c_new = np.sqrt(self.Eref**2 - m_e_GeV**2)
         p_old = p_array.p()[:]
         p_new = (p_old * p0c_old + Eref_old - self.Eref) / p0c_new
         p_array.E = self.Eref

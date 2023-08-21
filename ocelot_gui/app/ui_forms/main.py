@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -65,17 +66,19 @@ class Ui_MainWindow(object):
         self.action_save_lattice.setText(_translate("MainWindow", "Save Lattice"))
         self.action_exit.setText(_translate("MainWindow", "Exit"))
         self.action_edit_lattice.setText(_translate("MainWindow", "Edit Lattice"))
-        self.action_edit_lattice.setToolTip(_translate("MainWindow", "Edit Lattice and parameters"))
+        self.action_edit_lattice.setToolTip(
+            _translate("MainWindow", "Edit Lattice and parameters")
+        )
         self.action_calc_twiss.setText(_translate("MainWindow", "Twiss Functions"))
         self.action_calc_twiss.setToolTip(_translate("MainWindow", "Twiss Functions"))
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-

@@ -6,9 +6,9 @@ import copy
 import numpy as np
 import pandas as pd
 
-from ocelot.cpbd.beam import Twiss
 import ocelot.cpbd.elements as elements
 from ocelot.common.globals import m_e_GeV, speed_of_light
+from ocelot.cpbd.beam import Twiss
 
 try:
     import pand8

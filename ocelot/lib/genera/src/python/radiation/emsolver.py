@@ -1,22 +1,23 @@
-__author__ = 'Sergey Tomin'
-from em_screen import EMScreen
-from xframework.common.globals import *
-from trajectory.tr_solver import trajectory_body
-from trajectory.show_traject import showMeTrajectory
-from convolution.convolution_gauss import convolution_2D_cpp
-from show_screen import any_show as shw
-from display import display_undulator_param
-from save_intensity import save_intens as svr
-from ctypes import CDLL, c_double, c_int, POINTER
-from time import clock
-from numpy import sqrt, shape, zeros, pi, exp
-#from numpy import zeros, int32
-from sys import path
-from os import name as os_name
+__author__ = "Sergey Tomin"
+from ctypes import CDLL, POINTER, c_double, c_int
 from os import environ
+from os import name as os_name
 
+# from numpy import zeros, int32
+from sys import path
+from time import clock
 
-#from pylab import *
+from convolution.convolution_gauss import convolution_2D_cpp
+from display import display_undulator_param
+from em_screen import EMScreen
+from numpy import exp, pi, shape, sqrt, zeros
+from save_intensity import save_intens as svr
+from show_screen import any_show as shw
+from trajectory.show_traject import showMeTrajectory
+from trajectory.tr_solver import trajectory_body
+from xframework.common.globals import *
+
+# from pylab import *
 flag_pyOCL = True
 try:
     import pyopencl as cl
@@ -29,10 +30,11 @@ if flag_pyOCL:
 if os_name == "nt":
     pathToDll = path[0] + r"/radiation"
 else:
-    pathToDll = path[0] [:-7]+ "codes/renera/gcc_codes/radiation"
-#print pathToDll
-environ['PATH'] = environ['PATH'] + ";"+pathToDll
-#print os.environ['PATH']
+    pathToDll = path[0][:-7] + "codes/renera/gcc_codes/radiation"
+# print pathToDll
+environ["PATH"] = environ["PATH"] + ";" + pathToDll
+# print os.environ['PATH']
+
 
 def list_of_lists_to_LIST(list_lists):
     LIST = []
@@ -40,80 +42,95 @@ def list_of_lists_to_LIST(list_lists):
         LIST.extend(list)
     return LIST
 
+
 def pointer_to_list(list_motion):
     number_elements = len(list_motion)
 
     dPtr = POINTER(c_double)
 
-    nPoints_elements = []#zeros((number_elements) , dtype = int32) # dtype = int32 it can cause PROBLEMS!!!
+    nPoints_elements = (
+        []
+    )  # zeros((number_elements) , dtype = int32) # dtype = int32 it can cause PROBLEMS!!!
     B = []
-    M = [0.]*number_elements
+    M = [0.0] * number_elements
     for j in range(number_elements):
         motion = list_motion[j]
         nPoints_elements.append(len(motion.Z))
-        #print "npoints on traject =",  nPoints_elements
+        # print "npoints on traject =",  nPoints_elements
         M[j] = motion.memory_motion
         B.append(M[j].ctypes.data_as(dPtr))
-    pointer = dPtr*number_elements
+    pointer = dPtr * number_elements
     ppMotion = pointer(*B)
-    arr_type =  c_int*number_elements
+    arr_type = c_int * number_elements
     ptr_nPoints_elements = arr_type(*nPoints_elements)
     return ppMotion, ptr_nPoints_elements
 
-def radiation(em_screen, list_motion, gamma, beam_current,undulator, mode_proc):
-    #print len(list_lists_motion), len(list_lists_motion[0])
-    #list_motion = list_of_lists_to_LIST(list_lists_motion)
-    #print len(list_motion)
+
+def radiation(em_screen, list_motion, gamma, beam_current, undulator, mode_proc):
+    # print len(list_lists_motion), len(list_lists_motion[0])
+    # list_motion = list_of_lists_to_LIST(list_lists_motion)
+    # print len(list_motion)
     if flag_pyOCL and mode_proc == "GPU":
         platform = cl.get_platforms()
         device = platform[0].get_devices()
         max_work_item = device[0].get_info(cl.device_info.MAX_WORK_ITEM_SIZES)
 
-        max_size = max(max_work_item)*2
-        if (em_screen.nx > max_size or em_screen.ne > max_size  or em_screen.ny > max_size) and mode_proc != "CPU":
+        max_size = max(max_work_item) * 2
+        if (
+            em_screen.nx > max_size
+            or em_screen.ne > max_size
+            or em_screen.ny > max_size
+        ) and mode_proc != "CPU":
             mode_proc = "CPU"
-            print ("MAX_WORK_ITEM_SIZES = ", max_work_item)
-            print ("[xNstep, yNstep, eNstep] = ", em_screen.nx, em_screen.ny, em_screen.ne)
-            print ("GPU-mode was changed on CPU-mode", max_work_item)
+            print("MAX_WORK_ITEM_SIZES = ", max_work_item)
+            print(
+                "[xNstep, yNstep, eNstep] = ", em_screen.nx, em_screen.ny, em_screen.ne
+            )
+            print("GPU-mode was changed on CPU-mode", max_work_item)
     if flag_pyOCL == False and mode_proc == "GPU":
         mode_proc = "CPU"
-        print ("GPU-mode was changed on CPU-mode. pyOpenCL is absent ")
+        print("GPU-mode was changed on CPU-mode. pyOpenCL is absent ")
     em_screen.zerosArray()
     if mode_proc == "CPU":
         if os_name == "nt":
-            pathToDll = path[0] [:-7]+r"codes/genera/build/Radiation.dll"
+            pathToDll = path[0][:-7] + r"codes/genera/build/Radiation.dll"
         else:
-            pathToDll = path[0] [:-7]+"codes/genera/build/radiation.so"
+            pathToDll = path[0][:-7] + "codes/genera/build/radiation.so"
 
         my_rad = CDLL(pathToDll)
 
-        c_scrPrm = em_screen.screenPy2C(undulator.lperiod, undulator.nperiods, undulator.status)
+        c_scrPrm = em_screen.screenPy2C(
+            undulator.lperiod, undulator.nperiods, undulator.status
+        )
 
         ppMotion, ptr_nPoints_elements = pointer_to_list(list_motion)
         start = clock()
         dPtr = POINTER(c_double)
-        ret = my_rad.emsolver(c_int(len(list_motion)),
-                              ptr_nPoints_elements,
-                              ppMotion,
-                              c_double(gamma),
-                              c_scrPrm,
-                              em_screen.memory_screen.ctypes.data_as(dPtr))
+        ret = my_rad.emsolver(
+            c_int(len(list_motion)),
+            ptr_nPoints_elements,
+            ppMotion,
+            c_double(gamma),
+            c_scrPrm,
+            em_screen.memory_screen.ctypes.data_as(dPtr),
+        )
 
-        print ("CPU time execution: ", clock() - start)
+        print("CPU time execution: ", clock() - start)
         if ret != 1:
-            print ("radiation return = ", ret)
-
+            print("radiation return = ", ret)
 
     elif mode_proc == "GPU" and flag_pyOCL == True:
         em_screen = rad_cl.rad_cl(em_screen, list_motion, gamma, undulator)
 
     else:
-        print (" mode - ERROR !! (emsolver.py) ")
-    #print "beam current: ", beam_current
-    em_screen.distPhoton(gamma, current = beam_current)
+        print(" mode - ERROR !! (emsolver.py) ")
+    # print "beam current: ", beam_current
+    em_screen.distPhoton(gamma, current=beam_current)
     return em_screen
 
-from emitt_spread import   change_sizes_screen, convolution_all
+
+from emitt_spread import change_sizes_screen, convolution_all
+
 
 def solver(screen, cell, beam):
     """
@@ -133,50 +150,57 @@ def solver(screen, cell, beam):
         if elem.type == "undulator":
             undulator = elem
 
-            #elem.status = 13
+            # elem.status = 13
 
-
-    list_lists_motion = trajectory_body(cell, beam, accuracy = accuracy, mode_traj = "radiation")
+    list_lists_motion = trajectory_body(
+        cell, beam, accuracy=accuracy, mode_traj="radiation"
+    )
     list_motion = list_of_lists_to_LIST(list_lists_motion)
 
     showMeTrajectory(list_motion)
-    #beam.I = beam.Q
+    # beam.I = beam.Q
 
     display_undulator_param(screen, cell, beam, list_motion, show_param)
     em_screen = EMScreen(screen)
-    beam_current = beam.I*1000
+    beam_current = beam.I * 1000
 
-
-    #bool_es = energy_spread_analyse(em_screen, beam)
-    print ("before x:", em_screen.nx, em_screen.x_start, em_screen.x_step)
-    print ("before y:", em_screen.ny, em_screen.y_start, em_screen.y_step)
-    print ("before e:", em_screen.ne, em_screen.e_start, em_screen.e_step)
+    # bool_es = energy_spread_analyse(em_screen, beam)
+    print("before x:", em_screen.nx, em_screen.x_start, em_screen.x_step)
+    print("before y:", em_screen.ny, em_screen.y_start, em_screen.y_step)
+    print("before e:", em_screen.ne, em_screen.e_start, em_screen.e_step)
     change_sizes_screen(em_screen, beam)
-    print ("after x:", em_screen.nx, em_screen.x_start, em_screen.x_step, em_screen.nx_add)
-    print ("after y:", em_screen.ny, em_screen.y_start, em_screen.y_step, em_screen.ny_add)
-    print ("after e:", em_screen.ne, em_screen.e_start, em_screen.e_step, em_screen.ne_add)
+    print(
+        "after x:", em_screen.nx, em_screen.x_start, em_screen.x_step, em_screen.nx_add
+    )
+    print(
+        "after y:", em_screen.ny, em_screen.y_start, em_screen.y_step, em_screen.ny_add
+    )
+    print(
+        "after e:", em_screen.ne, em_screen.e_start, em_screen.e_step, em_screen.ne_add
+    )
 
-    em_screen = radiation(em_screen, list_motion, beam.gamma, beam_current, undulator, mode_proc = "CPU")
-    #print "Ok", shape(em_screen.Total)
+    em_screen = radiation(
+        em_screen, list_motion, beam.gamma, beam_current, undulator, mode_proc="CPU"
+    )
+    # print "Ok", shape(em_screen.Total)
     convolution_all(em_screen)
-    #print "after conv x:", em_screen.nx, em_screen.x_start, em_screen.x_step, em_screen.nx_add
-    #print "after conv y:", em_screen.ny, em_screen.y_start, em_screen.y_step, em_screen.ny_add
-    #print "after conv e:", em_screen.ne, em_screen.e_start, em_screen.e_step, em_screen.ne_add
+    # print "after conv x:", em_screen.nx, em_screen.x_start, em_screen.x_step, em_screen.nx_add
+    # print "after conv y:", em_screen.ny, em_screen.y_start, em_screen.y_step, em_screen.ny_add
+    # print "after conv e:", em_screen.ne, em_screen.e_start, em_screen.e_step, em_screen.ne_add
 
-    #print len(em_screen.Eph), em_screen.Eph[:10]
+    # print len(em_screen.Eph), em_screen.Eph[:10]
 
-    #print
-    #print "totla 2 = ", shape(em_screen.Total)
-    #emittance_effect(beam, screen)
+    # print
+    # print "totla 2 = ", shape(em_screen.Total)
+    # emittance_effect(beam, screen)
 
-    #energy_spread_effect(em_screen, beam, bool_es)
-    #print em_screen.Xph
+    # energy_spread_effect(em_screen, beam, bool_es)
+    # print em_screen.Xph
 
-    #print shape(em_screen.Total)
+    # print shape(em_screen.Total)
     shw(em_screen)
     svr(em_screen, "intens.gnri")
     return em_screen
-
 
 
 """

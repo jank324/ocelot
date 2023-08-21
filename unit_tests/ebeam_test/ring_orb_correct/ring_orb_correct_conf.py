@@ -17,7 +17,7 @@ D7 = Drift(l=0.289, eid="D7")
 D8 = Drift(l=0.399, eid="D8")
 D9 = Drift(l=3.009, eid="D9")
 
-SF = Sextupole(l=0.0001, k2= 17673.786254063251, eid="SF")
+SF = Sextupole(l=0.0001, k2=17673.786254063251, eid="SF")
 SD = Sextupole(l=0.0001, k2=-36169.817233025707, eid="SD")
 
 q1 = Quadrupole(l=0.293, k1=2.62, eid="Q1")
@@ -76,8 +76,8 @@ V4s = Vcor()
 V5s = Vcor()
 V6s = Vcor()
 
-B1 = SBend(l=0.23, angle=0.23/19.626248, eid="B1")
-B2 = SBend(l=1.227, angle=1.227/4.906312, eid="B2")
+B1 = SBend(l=0.23, angle=0.23 / 19.626248, eid="B1")
+B2 = SBend(l=1.227, angle=1.227 / 4.906312, eid="B2")
 
 Q1 = [q1, M1, H1, V1]
 Q2 = [q2, M2, H2, V2]
@@ -95,16 +95,63 @@ Q6s = [q6s, M6s, H6s, V6s]
 
 """pytest fixtures description"""
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def cell():
-    return (D1,SF,D2,Q1,D3,Q2,D2,SD,D4,B1,B2,D5,Q3,D5,B2,B1,D6,Q4,D7,Q5,D8,Q6,D9,Q6s,D8,Q5s,D7,Q4s,D6,B1,B2,D5,Q3s,D5,B2,B1,D4,SD,D2,Q2s,D3,Q1s,D2,SF,D1)
+    return (
+        D1,
+        SF,
+        D2,
+        Q1,
+        D3,
+        Q2,
+        D2,
+        SD,
+        D4,
+        B1,
+        B2,
+        D5,
+        Q3,
+        D5,
+        B2,
+        B1,
+        D6,
+        Q4,
+        D7,
+        Q5,
+        D8,
+        Q6,
+        D9,
+        Q6s,
+        D8,
+        Q5s,
+        D7,
+        Q4s,
+        D6,
+        B1,
+        B2,
+        D5,
+        Q3s,
+        D5,
+        B2,
+        B1,
+        D4,
+        SD,
+        D2,
+        Q2s,
+        D3,
+        Q1s,
+        D2,
+        SF,
+        D1,
+    )
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def method():
-    return  {'global': TransferMap}
+    return {"global": TransferMap}
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def lattice(cell, method):
     return MagneticLattice(cell, method=method)

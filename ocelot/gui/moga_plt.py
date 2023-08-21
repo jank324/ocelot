@@ -1,49 +1,51 @@
-import matplotlib.pyplot as plt
+import datetime
 import pickle
-import datetime, time
 import threading
+import time
+
+import matplotlib.pyplot as plt
 
 
-class ParetoPlot():
-
+class ParetoPlot:
     def __init__(self):
-       
-       self.work = False
+        self.work = False
 
-       self.limx = None
-       self.limy = None
-       self.file = 'moga.dat'
+        self.limx = None
+        self.limy = None
+        self.file = "moga.dat"
 
-       self.x = []
-       self.y = []
-       self.xnd = []
-       self.ynd = []
+        self.x = []
+        self.y = []
+        self.xnd = []
+        self.ynd = []
 
-       self.title = ''
-       self.xlabel = 'x variable'
-       self.ylabel = 'y variable'
+        self.title = ""
+        self.xlabel = "x variable"
+        self.ylabel = "y variable"
 
-       self.fig, self.ax = plt.subplots()
-       self.lineF, = self.ax.plot(self.x, self.y, 'ro', ms=3)
-       self.lineND, = self.ax.plot(self.xnd, self.ynd, 'bo', ms=4, alpha=0.75)
-       self.ax.set_xlabel("f1")
-       self.ax.set_xlabel("f2")
-       self.ax.grid(True)
+        self.fig, self.ax = plt.subplots()
+        (self.lineF,) = self.ax.plot(self.x, self.y, "ro", ms=3)
+        (self.lineND,) = self.ax.plot(self.xnd, self.ynd, "bo", ms=4, alpha=0.75)
+        self.ax.set_xlabel("f1")
+        self.ax.set_xlabel("f2")
+        self.ax.grid(True)
 
-       self.update_time = 1000
+        self.update_time = 1000
 
     def get_data_once(self):
         t_start = datetime.datetime.now()
 
         try:
-            with open(self.file, 'rb') as f:
+            with open(self.file, "rb") as f:
                 data_file = pickle.load(f)
         except Exception:
             time.sleep(0.1)
             print(" can not open file:", self.file)
             return
 
-        self.title = 'Iteration ' + str(data_file[0][0]) + ' from ' + str(data_file[0][1])
+        self.title = (
+            "Iteration " + str(data_file[0][0]) + " from " + str(data_file[0][1])
+        )
 
         self.x = []
         self.y = []
@@ -63,18 +65,17 @@ class ParetoPlot():
             self.ynd.append(ind[1])
 
         sleep = (datetime.datetime.now().microsecond - t_start.microsecond) / 1000.0
-        if sleep < 0.0: sleep += 1000.0
+        if sleep < 0.0:
+            sleep += 1000.0
         sleep = (self.update_time - sleep) / 1000.0 - 0.001  # 0.001 - correction factor
-        if sleep > 0.0: time.sleep(sleep)
+        if sleep > 0.0:
+            time.sleep(sleep)
 
     def get_data(self):
-        
-        while(self.work):
+        while self.work:
             self.get_data_once()
 
-
     def plot(self):
-
         plt.title(self.title)
 
         self.ax.set_xlim(self.limx)
@@ -89,25 +90,21 @@ class ParetoPlot():
         self.fig.canvas.flush_events()
 
     def show_once(self):
-
-        #self.work = True
+        # self.work = True
 
         self.get_data_once()
 
         self.plot()
         plt.show()
-        #self.work = False
+        # self.work = False
 
-        #thread.join()
-
+        # thread.join()
 
     def run(self):
-
         self.work = True
 
         thread = threading.Thread(target=self.get_data)
         thread.start()
-
 
         timer = self.fig.canvas.new_timer(interval=self.update_time)
         timer.add_callback(self.plot)
@@ -120,7 +117,7 @@ class ParetoPlot():
 
 if __name__ == "__main__":
     pic = ParetoPlot()
-    #pic.limx = [0.0, 20.0]
-    #pic.limy = [0.0, 10.0]
-    pic.file ="../../demos/ebeam/moga_plot.dat"
+    # pic.limx = [0.0, 20.0]
+    # pic.limy = [0.0, 10.0]
+    pic.file = "../../demos/ebeam/moga_plot.dat"
     pic.run()

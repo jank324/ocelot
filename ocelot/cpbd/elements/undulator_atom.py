@@ -2,13 +2,13 @@ import logging
 
 import numpy as np
 
+from ocelot.common.globals import pi, speed_of_light
 from ocelot.cpbd.elements.element import Element
 from ocelot.cpbd.field_map import FieldMap
+from ocelot.cpbd.high_order import m_e_eV, m_e_GeV
 from ocelot.cpbd.tm_params.first_order_params import FirstOrderParams
 from ocelot.cpbd.tm_params.runge_kutta_params import RungeKuttaParams
 from ocelot.cpbd.tm_params.undulator_test_params import UndulatorTestParams
-from ocelot.cpbd.high_order import m_e_GeV, m_e_eV
-from ocelot.common.globals import speed_of_light, pi
 
 _logger = logging.getLogger(__name__)
 
@@ -17,12 +17,14 @@ try:
 
     nb_flag = True
 except:
-    _logger.debug("radiation_py.py: module NUMBA is not installed. Install it to speed up calculation")
+    _logger.debug(
+        "radiation_py.py: module NUMBA is not installed. Install it to speed up calculation"
+    )
     nb_flag = False
 
 
 def und_field_py(x, y, z, lperiod, Kx, nperiods=None):
-    kx = 0.
+    kx = 0.0
     kz = 2 * pi / lperiod
     ky = np.sqrt(kz * kz + kx * kx)
     c = speed_of_light
@@ -38,12 +40,19 @@ def und_field_py(x, y, z, lperiod, Kx, nperiods=None):
     cosz = np.cos(kz_z)
 
     if nperiods is not None:
-        ph_shift = np.pi / 2.
-        def heaviside(x): return 0.5 * (np.sign(x) + 1)
-        z_coef = (0.25 * heaviside(z) + 0.5 * heaviside(z - lperiod / 2.) + 0.25 * heaviside(z - lperiod)
-                  - 0.25 * heaviside(z - (nperiods - 1) * lperiod) - 0.5 * heaviside(
-            z - (nperiods - 0.5) * lperiod)
-            - 0.25 * heaviside(z - nperiods * lperiod))
+        ph_shift = np.pi / 2.0
+
+        def heaviside(x):
+            return 0.5 * (np.sign(x) + 1)
+
+        z_coef = (
+            0.25 * heaviside(z)
+            + 0.5 * heaviside(z - lperiod / 2.0)
+            + 0.25 * heaviside(z - lperiod)
+            - 0.25 * heaviside(z - (nperiods - 1) * lperiod)
+            - 0.5 * heaviside(z - (nperiods - 0.5) * lperiod)
+            - 0.25 * heaviside(z - nperiods * lperiod)
+        )
         cosz = np.cos(kz_z + ph_shift) * z_coef
 
     cosx = np.cos(kx_x)
@@ -70,7 +79,9 @@ class UndulatorAtom(Element):
     eid - id of undulator.
     """
 
-    def __init__(self, lperiod=0., nperiods=0, Kx=0., Ky=0., field_file=None, eid=None):
+    def __init__(
+        self, lperiod=0.0, nperiods=0, Kx=0.0, Ky=0.0, field_file=None, eid=None
+    ):
         Element.__init__(self, eid)
         self.lperiod = lperiod
         self.nperiods = nperiods
@@ -78,24 +89,28 @@ class UndulatorAtom(Element):
         self.Kx = Kx
         self.Ky = Ky
         self.solver = "linear"  # can be "lin" is linear matrix,  "sym" - symplectic method and "rk" is Runge-Kutta
-        self.phase = 0.  # phase between Bx and By + pi/4 (spiral undulator)
+        self.phase = 0.0  # phase between Bx and By + pi/4 (spiral undulator)
 
-        self.ax = -1  # width of undulator, when ax is negative undulator width is infinite
+        self.ax = (
+            -1
+        )  # width of undulator, when ax is negative undulator width is infinite
         # I need this for analytic description of undulator
 
         self.field_file = field_file
         self.field_map = FieldMap(self.field_file)
-        self.mag_field = None  # the magnetic field map function - (Bx, By, Bz) = f(x, y, z)
-        self.v_angle = 0.
-        self.h_angle = 0.
+        self.mag_field = (
+            None  # the magnetic field map function - (Bx, By, Bz) = f(x, y, z)
+        )
+        self.v_angle = 0.0
+        self.h_angle = 0.0
 
     def __str__(self):
-        s = 'Undulator('
-        s += 'l=%7.5f, ' % self.l if self.l != 0. else ""
-        s += 'nperiods=%7.2f, ' % self.nperiods if np.abs(self.nperiods) > 1e-15 else ""
-        s += 'lperiod=%7.4f, ' % self.lperiod if np.abs(self.lperiod) > 1e-15 else ""
-        s += 'Kx=%7.3f, ' % self.Kx if np.abs(self.Kx) > 1e-15 else ""
-        s += 'Ky=%7.3f, ' % self.Ky if np.abs(self.Ky) > 1e-15 else ""
+        s = "Undulator("
+        s += "l=%7.5f, " % self.l if self.l != 0.0 else ""
+        s += "nperiods=%7.2f, " % self.nperiods if np.abs(self.nperiods) > 1e-15 else ""
+        s += "lperiod=%7.4f, " % self.lperiod if np.abs(self.lperiod) > 1e-15 else ""
+        s += "Kx=%7.3f, " % self.Kx if np.abs(self.Kx) > 1e-15 else ""
+        s += "Ky=%7.3f, " % self.Ky if np.abs(self.Ky) > 1e-15 else ""
         s += 'eid="' + str(self.id) + '")' if self.id is not None else ")"
         return s
 
@@ -120,22 +135,30 @@ class UndulatorAtom(Element):
                 r[3, 2] = -np.sin(omega_x * z) * omega_x
                 r[3, 3] = np.cos(omega_x * z)
 
-                r[4, 5] = - z / (gamma * beta) ** 2 * (1 + 0.5 * (Kx * beta) ** 2)
+                r[4, 5] = -z / (gamma * beta) ** 2 * (1 + 0.5 * (Kx * beta) ** 2)
 
             else:
                 r[2, 3] = z
             return r
 
-        R = undulator_r_z(length, lperiod=self.lperiod, Kx=self.Kx, Ky=self.Ky, energy=energy)
+        R = undulator_r_z(
+            length, lperiod=self.lperiod, Kx=self.Kx, Ky=self.Ky, energy=energy
+        )
         return R
 
-    def create_first_order_main_params(self, energy: float, delta_length: float = None) -> FirstOrderParams:
-        R = self.R_main_matrix(energy=energy, length=delta_length if delta_length != None else self.l)
+    def create_first_order_main_params(
+        self, energy: float, delta_length: float = None
+    ) -> FirstOrderParams:
+        R = self.R_main_matrix(
+            energy=energy, length=delta_length if delta_length != None else self.l
+        )
         B = self._default_B(R)
         return FirstOrderParams(R, B, self.tilt)
 
     def create_runge_kutta_main_params(self):
-        return RungeKuttaParams(mag_field=lambda x, y, z: und_field(x, y, z, self.lperiod, self.Kx))
+        return RungeKuttaParams(
+            mag_field=lambda x, y, z: und_field(x, y, z, self.lperiod, self.Kx)
+        )
 
     def und_field(self):
         return lambda x, y, z: und_field(x, y, z, self.lperiod, self.Kx)

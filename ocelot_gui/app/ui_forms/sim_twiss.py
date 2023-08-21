@@ -8,16 +8,21 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form_Twiss(object):
     def setupUi(self, Form_Twiss):
         Form_Twiss.setObjectName("Form_Twiss")
         Form_Twiss.resize(1200, 750)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Form_Twiss.sizePolicy().hasHeightForWidth())
         Form_Twiss.setSizePolicy(sizePolicy)
-        Form_Twiss.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
+        Form_Twiss.setLocale(
+            QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
+        )
         self.gridLayout = QtWidgets.QGridLayout(Form_Twiss)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout()
@@ -42,7 +47,9 @@ class Ui_Form_Twiss(object):
         self.plus_button.setObjectName("plus_button")
         self.horizontalLayout_4.addWidget(self.plus_button)
         self.edit_delta = QtWidgets.QDoubleSpinBox(self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.edit_delta.sizePolicy().hasHeightForWidth())
@@ -61,7 +68,9 @@ class Ui_Form_Twiss(object):
         self.horizontalLayout_4.addWidget(self.minus_button)
         self.verticalLayout_7.addLayout(self.horizontalLayout_4)
         self.scroll = QtWidgets.QScrollArea(self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.scroll.sizePolicy().hasHeightForWidth())
@@ -71,12 +80,16 @@ class Ui_Form_Twiss(object):
         self.scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.scroll.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop
+        )
         self.scroll.setObjectName("scroll")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 284, 534))
         self.scrollAreaWidgetContents.setAutoFillBackground(False)
-        self.scrollAreaWidgetContents.setStyleSheet("background-color: rgb(255, 255, 255);")
+        self.scrollAreaWidgetContents.setStyleSheet(
+            "background-color: rgb(255, 255, 255);"
+        )
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.scrollAreaWidgetContents)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 281, 80))
@@ -92,7 +105,9 @@ class Ui_Form_Twiss(object):
         self.horizontalLayout_6.setContentsMargins(-1, 6, -1, 6)
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
         self.label_3 = QtWidgets.QLabel(self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
@@ -100,10 +115,14 @@ class Ui_Form_Twiss(object):
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_6.addWidget(self.label_3)
         self.edit_tws_step = QtWidgets.QDoubleSpinBox(self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.edit_tws_step.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.edit_tws_step.sizePolicy().hasHeightForWidth()
+        )
         self.edit_tws_step.setSizePolicy(sizePolicy)
         self.edit_tws_step.setMaximumSize(QtCore.QSize(100, 16777215))
         self.edit_tws_step.setDecimals(6)
@@ -124,7 +143,9 @@ class Ui_Form_Twiss(object):
         self.horizontalLayout_5.setSpacing(6)
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
         self.btn1 = QtWidgets.QPushButton(Form_Twiss)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.btn1.sizePolicy().hasHeightForWidth())
@@ -132,7 +153,9 @@ class Ui_Form_Twiss(object):
         self.btn1.setObjectName("btn1")
         self.horizontalLayout_5.addWidget(self.btn1)
         self.btn2 = QtWidgets.QPushButton(Form_Twiss)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.btn2.sizePolicy().hasHeightForWidth())
@@ -146,7 +169,9 @@ class Ui_Form_Twiss(object):
         self.verticalLayout_6.setSpacing(6)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
         self.label = QtWidgets.QLabel(Form_Twiss)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
@@ -154,10 +179,14 @@ class Ui_Form_Twiss(object):
         self.label.setObjectName("label")
         self.verticalLayout_6.addWidget(self.label)
         self.tws_plot_widget = QtWidgets.QWidget(Form_Twiss)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.tws_plot_widget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.tws_plot_widget.sizePolicy().hasHeightForWidth()
+        )
         self.tws_plot_widget.setSizePolicy(sizePolicy)
         self.tws_plot_widget.setMinimumSize(QtCore.QSize(850, 700))
         self.tws_plot_widget.setObjectName("tws_plot_widget")
@@ -183,10 +212,10 @@ class Ui_Form_Twiss(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Form_Twiss = QtWidgets.QWidget()
     ui = Ui_Form_Twiss()
     ui.setupUi(Form_Twiss)
     Form_Twiss.show()
     sys.exit(app.exec_())
-

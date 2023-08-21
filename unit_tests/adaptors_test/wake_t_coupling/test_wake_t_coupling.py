@@ -1,25 +1,28 @@
-from time import time
 from copy import deepcopy
+from time import time
 
-import pytest
 import numpy as np
+import pytest
+
 try:
+    from wake_t.beamline_elements import Beamline
+    from wake_t.beamline_elements import Drift as WtDrift
+    from wake_t.beamline_elements import PlasmaLens, PlasmaStage
     from wake_t.driver_witness import LaserPulse
-    from wake_t.beamline_elements import (Beamline, PlasmaStage, PlasmaLens,
-                                          Drift as WtDrift)
     from wake_t.utilities.bunch_generation import get_gaussian_bunch_from_twiss
+
     wake_t_installed = True
 except ImportError:
     wake_t_installed = False
 
 from ocelot import *
+from ocelot.adaptors.wake_t import parray_to_wake_t_beam, wake_t_beam_to_parray
 from ocelot.gui.accelerator import *
-from ocelot.adaptors.wake_t import wake_t_beam_to_parray, parray_to_wake_t_beam
-
 
 # Define decorator to skip tests if Wake-T is not installed.
 only_if_wake_t_installed = pytest.mark.skipif(
-    not wake_t_installed, reason='Wake-T required to run tests')
+    not wake_t_installed, reason="Wake-T required to run tests"
+)
 
 
 @only_if_wake_t_installed
@@ -31,8 +34,19 @@ def test_conversion():
     """
     # Generate Wake-T bunch.
     bunch = get_gaussian_bunch_from_twiss(
-        en_x=1e-6, en_y=1e-6, a_x=0, a_y=0, b_x=0.3e-3, b_y=0.3e-3, ene=600,
-        ene_sp=0.1, s_t=3, xi_c=20e-6, q_tot=20, n_part=1e4)
+        en_x=1e-6,
+        en_y=1e-6,
+        a_x=0,
+        a_y=0,
+        b_x=0.3e-3,
+        b_y=0.3e-3,
+        ene=600,
+        ene_sp=0.1,
+        s_t=3,
+        xi_c=20e-6,
+        q_tot=20,
+        n_part=1e4,
+    )
 
     # Convert to Ocelot ParticleArray.
     p_array = wake_t_beam_to_parray(bunch)
@@ -59,8 +73,19 @@ def test_conversion_with_beamline():
     """
     # Generate Wake-T bunch.
     orig_bunch = get_gaussian_bunch_from_twiss(
-        en_x=1e-6, en_y=1e-6, a_x=0, a_y=0, b_x=0.3e-3, b_y=0.3e-3, ene=600,
-        ene_sp=0.1, s_t=3, xi_c=20e-6, q_tot=20, n_part=1e4)
+        en_x=1e-6,
+        en_y=1e-6,
+        a_x=0,
+        a_y=0,
+        b_x=0.3e-3,
+        b_y=0.3e-3,
+        ene=600,
+        ene_sp=0.1,
+        s_t=3,
+        xi_c=20e-6,
+        q_tot=20,
+        n_part=1e4,
+    )
 
     # Track beamline only with Wake-T.
     bunch_1 = deepcopy(orig_bunch)
@@ -75,13 +100,14 @@ def test_conversion_with_beamline():
 
 
 def track_beamline_only_wake_t(bunch):
-    """ Track test beamline only with Wake-T. """
+    """Track test beamline only with Wake-T."""
     # Create laser driver.
     laser = LaserPulse(100e-6, l_0=800e-9, w_0=30e-6, a_0=3, tau=30e-15)
 
     # Create beamline elements.
     plasma = PlasmaStage(
-        1e-2, 1e23, laser=laser, wakefield_model='simple_blowout', n_out=10)
+        1e-2, 1e23, laser=laser, wakefield_model="simple_blowout", n_out=10
+    )
     dr = WtDrift(0.1, n_out=10)
     p_lens = PlasmaLens(1e-2, 1000, n_out=5)
     bl = Beamline([plasma, dr, p_lens])
@@ -92,7 +118,7 @@ def track_beamline_only_wake_t(bunch):
 
 
 def track_beamline_wake_t_and_ocelot(bunch):
-    """ Track test beamline combining Wake-T and Ocelot. """
+    """Track test beamline combining Wake-T and Ocelot."""
     # 1. Wake-T (simulate plasma cell).
     # ---------------------------------
 
@@ -101,7 +127,8 @@ def track_beamline_wake_t_and_ocelot(bunch):
 
     # Define plasma stage.
     plasma = PlasmaStage(
-        1e-2, 1e23, laser=laser, wakefield_model='simple_blowout', n_out=10)
+        1e-2, 1e23, laser=laser, wakefield_model="simple_blowout", n_out=10
+    )
 
     # Track through plasma stage.
     plasma.track(bunch)
@@ -146,12 +173,14 @@ def track_beamline_wake_t_and_ocelot(bunch):
 
 
 def assert_equal_beams(bunch_1, bunch_2):
-    """ Check that two Wake-T particle bunches are equal. """
-    assert (np.allclose(bunch_1.x, bunch_2.x) and
-            np.allclose(bunch_1.px, bunch_2.px) and
-            np.allclose(bunch_1.y, bunch_2.y) and
-            np.allclose(bunch_1.py, bunch_2.py) and
-            np.allclose(bunch_1.xi, bunch_2.xi) and
-            np.allclose(bunch_1.pz, bunch_2.pz) and
-            np.allclose(bunch_1.q, bunch_2.q) and
-            np.allclose(bunch_1.prop_distance, bunch_2.prop_distance))
+    """Check that two Wake-T particle bunches are equal."""
+    assert (
+        np.allclose(bunch_1.x, bunch_2.x)
+        and np.allclose(bunch_1.px, bunch_2.px)
+        and np.allclose(bunch_1.y, bunch_2.y)
+        and np.allclose(bunch_1.py, bunch_2.py)
+        and np.allclose(bunch_1.xi, bunch_2.xi)
+        and np.allclose(bunch_1.pz, bunch_2.pz)
+        and np.allclose(bunch_1.q, bunch_2.q)
+        and np.allclose(bunch_1.prop_distance, bunch_2.prop_distance)
+    )

@@ -16,15 +16,22 @@ class TWCavityTM(TransferMap):
         self.v = v
         self.phi = phi
         self.freq = freq
-        self.delta_e_z = lambda z: self.v * np.cos(self.phi * np.pi / 180.) * z / self.length
-        self.delta_e = self.v * np.cos(self.phi * np.pi / 180.)
+        self.delta_e_z = (
+            lambda z: self.v * np.cos(self.phi * np.pi / 180.0) * z / self.length
+        )
+        self.delta_e = self.v * np.cos(self.phi * np.pi / 180.0)
         self.R_z = lambda z, energy: np.dot(
-            self.tw_cavity_R_z(z, self.v * z / self.length, energy, self.freq, self.phi),
-            self.f_entrance(z, self.v * z / self.length, energy, self.phi))
-        self.R = lambda energy: np.dot(self.f_exit(self.length, self.v, energy, self.phi),
-                                       self.R_z(self.length, energy))
+            self.tw_cavity_R_z(
+                z, self.v * z / self.length, energy, self.freq, self.phi
+            ),
+            self.f_entrance(z, self.v * z / self.length, energy, self.phi),
+        )
+        self.R = lambda energy: np.dot(
+            self.f_exit(self.length, self.v, energy, self.phi),
+            self.R_z(self.length, energy),
+        )
 
-    def tw_cavity_R_z(self, z, V, E, freq, phi=0.):
+    def tw_cavity_R_z(self, z, V, E, freq, phi=0.0):
         """
         :param z: length
         :param de: delta E
@@ -32,33 +39,41 @@ class TWCavityTM(TransferMap):
         :param E: initial energy
         :return: matrix
         """
-        phi = phi * np.pi / 180.
+        phi = phi * np.pi / 180.0
         de = V * np.cos(phi)
-        r12 = z * E / de * np.log(1. + de / E) if de != 0 else z
+        r12 = z * E / de * np.log(1.0 + de / E) if de != 0 else z
         r22 = E / (E + de)
-        r65 = V * np.sin(phi) / (E + de) * (2 * np.pi / (speed_of_light / freq)) if freq != 0 else 0
+        r65 = (
+            V * np.sin(phi) / (E + de) * (2 * np.pi / (speed_of_light / freq))
+            if freq != 0
+            else 0
+        )
         r66 = r22
-        cav_matrix = np.array([[1, r12, 0., 0., 0., 0.],
-                               [0, r22, 0., 0., 0., 0.],
-                               [0., 0., 1, r12, 0., 0.],
-                               [0., 0., 0, r22, 0., 0.],
-                               [0., 0., 0., 0., 1., 0],
-                               [0., 0., 0., 0., r65, r66]]).real
+        cav_matrix = np.array(
+            [
+                [1, r12, 0.0, 0.0, 0.0, 0.0],
+                [0, r22, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1, r12, 0.0, 0.0],
+                [0.0, 0.0, 0, r22, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 0],
+                [0.0, 0.0, 0.0, 0.0, r65, r66],
+            ]
+        ).real
         return cav_matrix
 
-    def f_entrance(self, z, V, E, phi=0.):
-        phi = phi * np.pi / 180.
+    def f_entrance(self, z, V, E, phi=0.0):
+        phi = phi * np.pi / 180.0
         de = V * np.cos(phi)
         r = np.eye(6)
-        r[1, 0] = -de / z / 2. / E
+        r[1, 0] = -de / z / 2.0 / E
         r[3, 2] = r[1, 0]
         return r
 
-    def f_exit(self, z, V, E, phi=0.):
-        phi = phi * np.pi / 180.
+    def f_exit(self, z, V, E, phi=0.0):
+        phi = phi * np.pi / 180.0
         de = V * np.cos(phi)
         r = np.eye(6)
-        r[1, 0] = +de / z / 2. / (E + de)
+        r[1, 0] = +de / z / 2.0 / (E + de)
         r[3, 2] = r[1, 0]
         return r
 

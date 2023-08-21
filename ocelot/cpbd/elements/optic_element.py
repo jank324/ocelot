@@ -1,15 +1,13 @@
 from copy import copy
-from ocelot.cpbd.transformations.transfer_map import TransferMap
-from typing import List, Dict, Type, Callable
-
+from typing import Callable, Dict, List, Type
 
 import numpy as np
 
 from ocelot.cpbd.elements.element import Element
 from ocelot.cpbd.transformations import second_order
-from ocelot.cpbd.transformations.transformation import Transformation, TMTypes
 from ocelot.cpbd.transformations.second_order import SecondTM
 from ocelot.cpbd.transformations.transfer_map import TransferMap
+from ocelot.cpbd.transformations.transformation import TMTypes, Transformation
 
 
 class OpticElement:
@@ -19,7 +17,13 @@ class OpticElement:
 
     __is_init = False  # needed to disable __getattr__ and __setattr__ until __init__ is executed
 
-    def __init__(self, element: Element, tm: Type[Transformation], default_tm: Type[Transformation], **params) -> None:
+    def __init__(
+        self,
+        element: Element,
+        tm: Type[Transformation],
+        default_tm: Type[Transformation],
+        **params,
+    ) -> None:
         """[summary]
         Creates a optic element which holds element atom and its transformation.
         Each concrete optic element have to implement its own __init__
@@ -49,12 +53,13 @@ class OpticElement:
     def __getattr__(self, name):
         if self.__is_init and name in self.element.__dict__:
             return getattr(self.element, name)
-        raise AttributeError(f"{self.__class__.__name__} object has no attribute {name}")
+        raise AttributeError(
+            f"{self.__class__.__name__} object has no attribute {name}"
+        )
 
     # To access all setter attributes of element to fulfill old iface
     def __setattr__(self, name, value):
         if self.__is_init and name in self.element.__dict__:
-
             if self._tms is not None:
                 for tm in self._tms:
                     tm._clean_cashed_values()
@@ -159,7 +164,9 @@ class OpticElement:
             self._tms = self._create_tms(self.element, tm, **params)
             self._tm_class_type = tm
         except AttributeError as e:
-            print(f"Can't set {tm.__name__} for {self.__class__.__name__} fall back to default tm which is {self.default_tm.__name__}.")
+            print(
+                f"Can't set {tm.__name__} for {self.__class__.__name__} fall back to default tm which is {self.default_tm.__name__}."
+            )
             self._tms = self._create_tms(self.element, self.default_tm, **params)
             self._tm_class_type = self.default_tm
 
@@ -181,7 +188,7 @@ class OpticElement:
         e.g elem.set_tm(tm=RungaKuttraTM, npoints=2000),
         Note: Transformation specific parameters can be also set via __init__.
 
-        :param tm: 
+        :param tm:
         :type tm: Transformation
         """
         new_kwargs = params if params and params != self._kwargs else None
@@ -199,7 +206,13 @@ class OpticElement:
             for tm in self.tms:
                 tm._clean_cashed_values()
 
-    def get_section_tms(self, delta_l: float, start_l: float = 0.0, ignore_edges=False, first_order_only=False) -> List[Transformation]:
+    def get_section_tms(
+        self,
+        delta_l: float,
+        start_l: float = 0.0,
+        ignore_edges=False,
+        first_order_only=False,
+    ) -> List[Transformation]:
         """[summary]
         Calculates transformations for a section of the Element. The section is defined by start_l and delta_l.
 
@@ -211,10 +224,10 @@ class OpticElement:
         :type ignore_edges: bool, optional
         :param first_order_only: Returns the first order transforamtions if True, defaults to False
         :type first_order_only: bool, optional
-        :return: A List of Transformation for the section. 
+        :return: A List of Transformation for the section.
         :rtype: List[Transformation]
         """
-        #tms = [TMTypes.ROT_ENTRANCE]
+        # tms = [TMTypes.ROT_ENTRANCE]
         tm_list = []
         total_length = self.element.l
         if start_l < 1e-10:
@@ -229,16 +242,26 @@ class OpticElement:
                     tm_list.append(copy(tm))
                 return tm_list
 
-        if (start_l + delta_l > total_length or np.isclose(start_l + delta_l, total_length)):
+        if start_l + delta_l > total_length or np.isclose(
+            start_l + delta_l, total_length
+        ):
             delta_l_red = total_length - start_l
             TM_Class = self.get_tm(TMTypes.MAIN).__class__
-            tm_list.append(TM_Class.from_element(element=self.element, tm_type=TMTypes.MAIN, delta_l=delta_l_red))
+            tm_list.append(
+                TM_Class.from_element(
+                    element=self.element, tm_type=TMTypes.MAIN, delta_l=delta_l_red
+                )
+            )
             if self.element.has_edge and not ignore_edges:
                 tm = self.get_tm(TMTypes.EXIT, first_order_only)
                 tm_list.append(copy(tm))
         else:
             TM_Class = self.get_tm(TMTypes.MAIN, first_order_only).__class__
-            tm_list.append(TM_Class.from_element(element=self.element, tm_type=TMTypes.MAIN, delta_l=delta_l))
+            tm_list.append(
+                TM_Class.from_element(
+                    element=self.element, tm_type=TMTypes.MAIN, delta_l=delta_l
+                )
+            )
         # tms.append(TMTypes.ROT_EXIT)
         return tm_list
 
@@ -249,7 +272,9 @@ class OpticElement:
                 return tm
 
     @staticmethod
-    def _create_tms(element: Element, tm: Type[Transformation], **params) -> List[Transformation]:
+    def _create_tms(
+        element: Element, tm: Type[Transformation], **params
+    ) -> List[Transformation]:
         tms = []
         if element.has_edge:
             tms.append(tm.from_element(element, TMTypes.ENTRANCE, **params))

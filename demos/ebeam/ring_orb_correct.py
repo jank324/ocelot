@@ -1,44 +1,47 @@
-__author__ = 'Sergey Tomin'
+__author__ = "Sergey Tomin"
 
-from ocelot.gui.accelerator import *
+import logging
+
+import seaborn as sns
+
 from ocelot.cpbd.orbit_correction import *
 from ocelot.cpbd.response_matrix import *
-import seaborn as sns
-import logging
+from ocelot.gui.accelerator import *
+
 logging.basicConfig(level=logging.INFO)
 
 # **************************** LATTICE: START ***********************************************
-D0 = Drift (l = 0., eid= "D0")
-D1 = Drift (l = 1.49, eid= "D1")
-D2 = Drift (l = 0.1035, eid= "D2")
-D3 = Drift (l = 0.307, eid= "D3")
-D4 = Drift (l = 0.33, eid= "D4")
-D5 = Drift (l = 0.3515, eid= "D5")
-D6 = Drift (l = 0.3145, eid= "D6")
-D7 = Drift (l = 0.289, eid= "D7")
-D8 = Drift (l = 0.399, eid= "D8")
-D9 = Drift (l = 3.009, eid= "D9")
+D0 = Drift(l=0.0, eid="D0")
+D1 = Drift(l=1.49, eid="D1")
+D2 = Drift(l=0.1035, eid="D2")
+D3 = Drift(l=0.307, eid="D3")
+D4 = Drift(l=0.33, eid="D4")
+D5 = Drift(l=0.3515, eid="D5")
+D6 = Drift(l=0.3145, eid="D6")
+D7 = Drift(l=0.289, eid="D7")
+D8 = Drift(l=0.399, eid="D8")
+D9 = Drift(l=3.009, eid="D9")
 
-SF = Sextupole(l = 0.0001, k2 = 17673.786254063251*1, eid= "SF")
-SD = Sextupole(l = 0.0001, k2 =-36169.817233025707*1, eid= "SD")
+SF = Sextupole(l=0.0001, k2=17673.786254063251 * 1, eid="SF")
+SD = Sextupole(l=0.0001, k2=-36169.817233025707 * 1, eid="SD")
 
-q1 = Quadrupole (l = 0.293, k1 = 2.62, eid= "Q1")
+q1 = Quadrupole(l=0.293, k1=2.62, eid="Q1")
 q1.dx = 0.001
 q1.dy = 0.001
-q2 = Quadrupole (l = 0.293, k1 = -3.1, eid= "Q2")
-q3 = Quadrupole (l = 0.327, k1 = 2.8, eid= "Q3")
-q4 = Quadrupole (l = 0.291, k1 = -3.7, eid= "Q4")
-q5 = Quadrupole (l = 0.391, k1 = 4.0782, eid= "Q5")
-q6 = Quadrupole (l = 0.291, k1 = -3.534859, eid= "D6")
+q2 = Quadrupole(l=0.293, k1=-3.1, eid="Q2")
+q3 = Quadrupole(l=0.327, k1=2.8, eid="Q3")
+q4 = Quadrupole(l=0.291, k1=-3.7, eid="Q4")
+q5 = Quadrupole(l=0.391, k1=4.0782, eid="Q5")
+q6 = Quadrupole(l=0.291, k1=-3.534859, eid="D6")
 
-q1s = Quadrupole (l = 0.293, k1 = 2.62, eid= "Q1")
+q1s = Quadrupole(l=0.293, k1=2.62, eid="Q1")
 q1s.dx = 0.001
 q1s.dy = 0.001
-q2s = Quadrupole (l = 0.293, k1 = -3.1, eid= "Q2")
-q3s = Quadrupole (l = 0.327, k1 = 2.8, eid= "Q3")
-q4s = Quadrupole (l = 0.291, k1 = -3.7, eid= "Q4")
-q5s = Quadrupole (l = 0.391, k1 = 4.0782, eid= "Q5")
-q6s = Quadrupole (l = 0.291, k1 = -3.534859, eid= "D6")
+q2s = Quadrupole(l=0.293, k1=-3.1, eid="Q2")
+q3s = Quadrupole(l=0.327, k1=2.8, eid="Q3")
+q4s = Quadrupole(l=0.291, k1=-3.7, eid="Q4")
+q5s = Quadrupole(l=0.391, k1=4.0782, eid="Q5")
+q6s = Quadrupole(l=0.291, k1=-3.534859, eid="D6")
 
 M1 = Monitor(eid="M1")
 M2 = Monitor(eid="M2")
@@ -78,8 +81,8 @@ V4s = Vcor(eid="V4s")
 V5s = Vcor(eid="V5s")
 V6s = Vcor(eid="V6s")
 
-B1 = SBend(l = 0.23, angle = 0.23/19.626248, eid= "B1")
-B2 = SBend(l = 1.227, angle = 1.227/4.906312, eid= "B2")
+B1 = SBend(l=0.23, angle=0.23 / 19.626248, eid="B1")
+B2 = SBend(l=1.227, angle=1.227 / 4.906312, eid="B2")
 
 Q1 = [q1, M1, H1, V1]
 Q2 = [q2, M2, H2, V2]
@@ -94,7 +97,53 @@ Q4s = [q4s, M4s, H4s, V4s]
 Q5s = [q5s, M5s, H5s, V5s]
 Q6s = [q6s, M6s, H6s, V6s]
 
-cell = ( D1,SF, D2,Q1,D3, Q2,D2,SD,D4,B1,B2,D5,Q3,D5,B2,B1,D6,Q4,D7,Q5,D8,Q6,D9,Q6s,D8,Q5s,D7,Q4s,D6,B1,B2,D5,Q3s,D5,B2,B1,D4,SD,D2,Q2s,D3,Q1s,D2,SF,D1)
+cell = (
+    D1,
+    SF,
+    D2,
+    Q1,
+    D3,
+    Q2,
+    D2,
+    SD,
+    D4,
+    B1,
+    B2,
+    D5,
+    Q3,
+    D5,
+    B2,
+    B1,
+    D6,
+    Q4,
+    D7,
+    Q5,
+    D8,
+    Q6,
+    D9,
+    Q6s,
+    D8,
+    Q5s,
+    D7,
+    Q4s,
+    D6,
+    B1,
+    B2,
+    D5,
+    Q3s,
+    D5,
+    B2,
+    B1,
+    D4,
+    SD,
+    D2,
+    Q2s,
+    D3,
+    Q1s,
+    D2,
+    SF,
+    D1,
+)
 
 # **************************** LATTICE: END ***********************************************
 
@@ -104,12 +153,12 @@ beam.E = 2.5
 beam.sigma_E = 0.001
 beam.I = 0.1
 
-method = {'global': TransferMap}
+method = {"global": TransferMap}
 
 lat = MagneticLattice(cell, method=method)
 
 tw0 = Twiss(beam)
-tws=twiss(lat, tw0, nPoints=1000)
+tws = twiss(lat, tw0, nPoints=1000)
 
 plot_opt_func(lat, tws, top_plot=["Dx"])
 plt.show()
@@ -122,7 +171,7 @@ orb.response_matrix = ResponseMatrix(method=method)
 orb.response_matrix.calculate()
 cor_names_ref = orb.response_matrix.cor_names
 bpm_names_ref = orb.response_matrix.bpm_names
-#print("ref = ", orb.response_matrix.matrix)
+# print("ref = ", orb.response_matrix.matrix)
 orb.response_matrix.dump("test.p")
 orb.response_matrix.load("test.p")
 
@@ -133,8 +182,8 @@ plt.show()
 s_bpm_b = np.array([p.s for p in orb.bpms])
 x_bpm_b, y_bpm_b = method.read_virtual_orbit()
 fig, ax = plot_API(lat)
-ax.plot(s_bpm_b, x_bpm_b*1000., "ro-")
-ax.plot(s_bpm_b, y_bpm_b*1000., "bo-")
+ax.plot(s_bpm_b, x_bpm_b * 1000.0, "ro-")
+ax.plot(s_bpm_b, y_bpm_b * 1000.0, "bo-")
 plt.show()
 
 
@@ -144,11 +193,11 @@ x_bpm, y_bpm = method.read_virtual_orbit()
 
 p_list = lattice_track(lat, method.particle0)
 s = [p.s for p in p_list]
-x = [p.x*1000. for p in p_list]
-y = [p.y*1000. for p in p_list]
+x = [p.x * 1000.0 for p in p_list]
+y = [p.y * 1000.0 for p in p_list]
 fig, ax = plot_API(lat)
-ax.plot(s_bpm_b, x_bpm*1000., "ro")
-ax.plot(s, x, 'r')
-ax.plot(s_bpm_b, y_bpm*1000., "bo")
-ax.plot(s, y, 'b')
+ax.plot(s_bpm_b, x_bpm * 1000.0, "ro")
+ax.plot(s, x, "r")
+ax.plot(s_bpm_b, y_bpm * 1000.0, "bo")
+ax.plot(s, y, "b")
 plt.show()

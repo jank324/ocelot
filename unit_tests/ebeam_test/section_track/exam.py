@@ -1,7 +1,9 @@
 import sys
+
 sys.path.append("/Users/tomins/Nextcloud/DESY/repository/ocelot/")
-from ocelot import *
 from accelerator.s2e_sections.sections import *
+
+from ocelot import *
 from ocelot.utils.section_track import *
 
 data_dir = "unit_tests/ebeam_test/section_track/data"

@@ -1,31 +1,34 @@
-import time
-import os
-import sys
-import socket
 import copy
+import os
+import socket
+import sys
+import time
 
 try:
     import h5py
 
     h5py_avail = True
 except ImportError:
-    print("wave.py: module h5py is not installed. Install it if you want to use genesis4 adaptor")
+    print(
+        "wave.py: module h5py is not installed. Install it if you want to use genesis4 adaptor"
+    )
     h5py_avail = False
 
 import numpy as np
 
 from ocelot import ParticleArray
-from ocelot.optics.wave import calc_ph_sp_dens, RadiationField
-from ocelot.common.globals import *
 from ocelot.adaptors.genesis import GenesisElectronDist  # tmp
+from ocelot.common.globals import *
 from ocelot.common.ocelog import *
-from ocelot.utils.launcher import *
-from ocelot.cpbd.beam import Beam, BeamArray
-from ocelot.cpbd.elements import Element, Drift, Quadrupole, Undulator, Marker
-from ocelot.cpbd.magnetic_lattice import MagneticLattice
 from ocelot.common.py_func import copy_this_script
+from ocelot.cpbd.beam import Beam, BeamArray
+from ocelot.cpbd.elements import Drift, Element, Marker, Quadrupole, Undulator
+from ocelot.cpbd.magnetic_lattice import MagneticLattice
+from ocelot.optics.wave import RadiationField, calc_ph_sp_dens
+from ocelot.utils.launcher import *
 
 _logger = logging.getLogger(__name__)
+
 
 # TODO: move to cpbd (enentually?)
 class Chicane(Element):
@@ -37,7 +40,7 @@ class Chicane(Element):
     delay - path length difference between the straight path and the actual trajectory [rad].
     """
 
-    def __init__(self, l=0., lb=0., ld=0., delay=0., eid=None):
+    def __init__(self, l=0.0, lb=0.0, ld=0.0, delay=0.0, eid=None):
         # Element.__init__(self, eid)
         super(Chicane, self).__init__(eid=eid)
         self.l = l
@@ -50,21 +53,14 @@ class Phaseshifter(Element):
     """
     phase shifter element (implemented for Genesis4, not used by cpbd)
     l - length of phase shifter in [m]
-    phi = introduced phase shift in [rad] 
+    phi = introduced phase shift in [rad]
     """
 
-    def __init__(self, l=0., phi=0., eid=None):
+    def __init__(self, l=0.0, phi=0.0, eid=None):
         # Element.__init__(self, eid)
         super(Phaseshifter, self).__init__(eid=eid)
         self.l = l
         self.phi = phi
-
-
-                           
-                                                      
-                                                                                                 
-                                          
-              
 
 
 class Genesis4Simulation:
@@ -74,9 +70,8 @@ class Genesis4Simulation:
     settings for returning, plotting or cleaning output
     """
 
-    def __init__(self, ginp=None, exp_dir='', **kwargs):
-
-        self.mpiParameters = ''
+    def __init__(self, ginp=None, exp_dir="", **kwargs):
+        self.mpiParameters = ""
         if ginp is not None:
             self.ginp = ginp
         else:
@@ -86,12 +81,12 @@ class Genesis4Simulation:
 
         # self.del_files = ('gout', 'fld', 'par')
 
-        self.plot_output = kwargs.get('plot_output', True)
-        self.return_out = kwargs.get('return_out', True)
-        self.cleanup_afterwards = kwargs.get('cleanup_afterwards', False)
-        self.zstop = kwargs.get('zstop', np.inf)
-        self.exec_script_path = kwargs.get('exec_script_path', None)
-        self.launcher = kwargs.get('launcher', get_genesis4_launcher())
+        self.plot_output = kwargs.get("plot_output", True)
+        self.return_out = kwargs.get("return_out", True)
+        self.cleanup_afterwards = kwargs.get("cleanup_afterwards", False)
+        self.zstop = kwargs.get("zstop", np.inf)
+        self.exec_script_path = kwargs.get("exec_script_path", None)
+        self.launcher = kwargs.get("launcher", get_genesis4_launcher())
 
     @property
     def root_name(self):
@@ -115,13 +110,16 @@ class Genesis4Simulation:
             os.makedirs(self.exp_dir)
 
     def write_inp_file(self):
-        with open(self.input_filepath(), 'w') as file:
+        with open(self.input_filepath(), "w") as file:
             inp_string = str(self.ginp)
             file.write(inp_string)
 
     def write_lat_file(self):
-        write_gen4_lat(self.ginp.attachments.lat, filepath=self.filepath(self.ginp.setup.lattice),
-                       zstop=self.zstop)
+        write_gen4_lat(
+            self.ginp.attachments.lat,
+            filepath=self.filepath(self.ginp.setup.lattice),
+            zstop=self.zstop,
+        )
 
     def write_dfl_files(self):
         """
@@ -129,17 +127,19 @@ class Genesis4Simulation:
         :return:
         """
         for element_id in self.ginp.sequence.keys():
-            if element_id.startswith('importfield'):
+            if element_id.startswith("importfield"):
                 impfld = self.ginp.sequence[element_id]
                 if impfld._name_list_id in self.ginp.attachments.dfl.keys():
                     if impfld.file is not None:
                         filename = self.filepath(impfld.file)
                     else:
-                        filename = self.filepath(impfld._name_list_id + 'dfl.h5')
+                        filename = self.filepath(impfld._name_list_id + "dfl.h5")
                         impfld.file = filename
-                    write_dfl4(self.ginp.attachments.dfl[impfld._name_list_id], filename)
+                    write_dfl4(
+                        self.ginp.attachments.dfl[impfld._name_list_id], filename
+                    )
 
-        # for name_list_id, dfl in self.ginp.attachments.dfl: #TODO: iterate over namespaces, not attachments. If there is importing namespace without attachments 
+        # for name_list_id, dfl in self.ginp.attachments.dfl: #TODO: iterate over namespaces, not attachments. If there is importing namespace without attachments
         # if not isinstance(dfl, str):
         # write_dfl4(dfl, self.ginp.sequence[name_list_id].file)
 
@@ -150,45 +150,49 @@ class Genesis4Simulation:
         :return:
         """
         for element in self.ginp.sequence:
-            if element.startswith('importbeam'):
+            if element.startswith("importbeam"):
                 imppar = self.ginp.sequence[element]
                 if imppar._name_list_id in self.ginp.attachments.dpa:
                     if imppar.file is not None:
                         filename = imppar.file
                     else:
-                        filename = imppar._name_list_id + 'par.h5'
+                        filename = imppar._name_list_id + "par.h5"
                         imppar.file = filename
                     # write_dpa4(self.attachments.dpa[imppar._name_list_id], filename)
 
     def write_beam_files(self):
         for element_id in self.ginp.sequence.keys():
-            if element_id.startswith('beam'):
+            if element_id.startswith("beam"):
                 impbeam = self.ginp.sequence[element_id]
                 if impbeam._name_list_id in self.ginp.attachments.beam.keys():
-                    file_path = self.filepath(impbeam._name_list_id + '.beam.h5')
-                    write_beamtwiss_hdf5(self.ginp.attachments.beam[impbeam._name_list_id], file_path)
+                    file_path = self.filepath(impbeam._name_list_id + ".beam.h5")
+                    write_beamtwiss_hdf5(
+                        self.ginp.attachments.beam[impbeam._name_list_id], file_path
+                    )
 
     def write_all_files(self):
         self.create_exp_dir()
         self.write_inp_file()
-                             
+
         self.write_dfl_files()
         self.write_beam_files()
         self.write_lat_file()
-        
+
         if self.exec_script_path is not None:
             copy_this_script(self.exec_script_path, self.exp_dir)
         # TODO: write all attachments
 
-    def prepare_launcher(self, program_path='genesis4'):
+    def prepare_launcher(self, program_path="genesis4"):
         self.launcher.program = program_path
         self.launcher.dir = self.exp_dir
-        self.launcher.argument = ' ' + self.ginp.filename
-        self.mpiParameters = '-np 8'  # TODO: calculate and request minimum reasonable number of cores (to not ovewblow the window) S.S.
+        self.launcher.argument = " " + self.ginp.filename
+        self.mpiParameters = "-np 8"  # TODO: calculate and request minimum reasonable number of cores (to not ovewblow the window) S.S.
 
         # TODO: implement on Launcher level
         if sys.platform not in ["linux", "linux2"]:
-            _logger.error('Only linux platform supported for given launcher (at the moment)')
+            _logger.error(
+                "Only linux platform supported for given launcher (at the moment)"
+            )
             pass
 
     def run(self, launcher=None):
@@ -201,7 +205,7 @@ class Genesis4Simulation:
         self.launcher.launch()
 
         if self.return_out:
-            out = read_gout4(self.root_path() + '.out.h5')
+            out = read_gout4(self.root_path() + ".out.h5")
         else:
             out = None
 
@@ -211,7 +215,7 @@ class Genesis4Simulation:
         return out
 
     def clean_output(self):
-        os.system('rm -r {}*'.format(self.root_path()))
+        os.system("rm -r {}*".format(self.root_path()))
 
 
 class Genesis4Input:
@@ -220,17 +224,19 @@ class Genesis4Input:
     """
 
     def __init__(self):
-        self.sequence = {}  # sequence of namespaces; each value starts with a supported namespace name, e.g. "field" and if needed is followed by unique suffix after pound symbol, like "field#2"
+        self.sequence = (
+            {}
+        )  # sequence of namespaces; each value starts with a supported namespace name, e.g. "field" and if needed is followed by unique suffix after pound symbol, like "field#2"
         self.attachments = Genesis4Attachments()
         # self.add_prefix_attributes = ['setup.lattice', 'setup.rootname', 'filename', 'write.field', 'write.beam']
-        self.filename = 'input.in'
+        self.filename = "input.in"
 
     def __str__(self):
-        str_out = '# autogenerated with Ocelot\n\n'  # https://github.com/ocelot-collab/ocelot\n\n
+        str_out = "# autogenerated with Ocelot\n\n"  # https://github.com/ocelot-collab/ocelot\n\n
         for name_list in self.sequence.values():
-            str_out += '&' + name_list._name_list_label + '\n'
+            str_out += "&" + name_list._name_list_label + "\n"
             str_out += str(name_list)
-            str_out += '&end\n\n'
+            str_out += "&end\n\n"
         return str_out
 
     def make_sequence(self, gen4_name_lists_ids=None):
@@ -242,11 +248,13 @@ class Genesis4Input:
 
         name_list_subclasses = {}
         for name_list_subclass in Genesis4NameList.__subclasses__():
-            name_list_subclasses[name_list_subclass()._name_list_label] = name_list_subclass
+            name_list_subclasses[
+                name_list_subclass()._name_list_label
+            ] = name_list_subclass
 
         for name_list_id in gen4_name_lists_ids:
-            if '#' in name_list_id:
-                temp, _ = name_list_id.split('#')
+            if "#" in name_list_id:
+                temp, _ = name_list_id.split("#")
             else:
                 temp = name_list_id
             self.sequence[name_list_id] = name_list_subclasses[temp](name_list_id)
@@ -270,50 +278,65 @@ class Genesis4Input:
         beam_counter = 0
         field_counter = 0
         for id, name_list in self.sequence.items():
-            if isinstance(name_list, (Genesis4BeamNL, Genesis4ImportBeamNL, Genesis4ImportDistributionNL)):
+            if isinstance(
+                name_list,
+                (Genesis4BeamNL, Genesis4ImportBeamNL, Genesis4ImportDistributionNL),
+            ):
                 beam_counter += 1
             if isinstance(name_list, (Genesis4FieldNL, Genesis4ImportFieldNL)):
                 field_counter += 1
             if isinstance(name_list, (Genesis4TrackNL,)):
                 if beam_counter != 1:
                     _logger.error(
-                        'Genesis4Input.sequence contains more or less than one declaration of beam')  # TODO: specify, 0 or >1
+                        "Genesis4Input.sequence contains more or less than one declaration of beam"
+                    )  # TODO: specify, 0 or >1
                 if field_counter != 1:
-                    _logger.error('Genesis4Input.sequence contains more or less than one declaration of field')
+                    _logger.error(
+                        "Genesis4Input.sequence contains more or less than one declaration of field"
+                    )
                 field_counter = 0
                 beam_counter = 0
         # TODO: decide whether error raising is needed if co-exist e.g. importbeam and beam or importfield and field
 
     def populate_sequence_beam_array(self, beam_name_list_id, beam=None):
-        _logger.info('Populating beam_array to Genesis4Input.sequence')
+        _logger.info("Populating beam_array to Genesis4Input.sequence")
         if beam_name_list_id not in self.attachments.beam.keys():
             if beam is None:
-                _logger.warning(ind_str + 'no beam_array to populate')
+                _logger.warning(ind_str + "no beam_array to populate")
             else:
                 self.attachments.beam[beam_name_list_id] = beam
-                self.sequence['setup'].gamma0 = np.mean(beam.g)
-                self.sequence['time'].slen = np.amax(beam.s) - np.amin(beam.s)
+                self.sequence["setup"].gamma0 = np.mean(beam.g)
+                self.sequence["time"].slen = np.amax(beam.s) - np.amin(beam.s)
         new_sequence = {}
         for name_list_id, name_list in self.sequence.items():
             if name_list_id != beam_name_list_id:
                 new_sequence[name_list_id] = name_list
             else:
                 for attr in self.sequence[beam_name_list_id].__dict__.keys():
-                    if attr.startswith('_'):
+                    if attr.startswith("_"):
                         continue
-                    profile_name_list_id = 'profile_file#' + attr + '_' + beam_name_list_id
+                    profile_name_list_id = (
+                        "profile_file#" + attr + "_" + beam_name_list_id
+                    )
                     new_sequence[profile_name_list_id] = Genesis4ProfileFileNL()
-                    new_sequence[profile_name_list_id].label = attr + '_' + beam_name_list_id.replace('#', '')
-                    new_sequence[profile_name_list_id].xdata = beam_name_list_id + '.beam.h5/s'
-                    new_sequence[profile_name_list_id].ydata = beam_name_list_id + '.beam.h5/' + attr
+                    new_sequence[profile_name_list_id].label = (
+                        attr + "_" + beam_name_list_id.replace("#", "")
+                    )
+                    new_sequence[profile_name_list_id].xdata = (
+                        beam_name_list_id + ".beam.h5/s"
+                    )
+                    new_sequence[profile_name_list_id].ydata = (
+                        beam_name_list_id + ".beam.h5/" + attr
+                    )
                 new_sequence[name_list_id] = name_list
                 for attr in self.sequence[beam_name_list_id].__dict__.keys():
-                    if attr.startswith('_'):
+                    if attr.startswith("_"):
                         continue
-                    profile_file_label = '@' + attr + '_' + beam_name_list_id.replace('#', '')
+                    profile_file_label = (
+                        "@" + attr + "_" + beam_name_list_id.replace("#", "")
+                    )
                     setattr(new_sequence[name_list_id], attr, profile_file_label)
         self.sequence = new_sequence
-
 
     def populate_sequence_beam(self, beam, name_list_id):
         """
@@ -325,14 +348,17 @@ class Genesis4Input:
         if isinstance(beam, BeamArray):
             beam_pk = beam.pk()
             _logger.warning(
-                'at the moment method beam_to_sequence_beam parses a single beam slice; peak current value is taken')
+                "at the moment method beam_to_sequence_beam parses a single beam slice; peak current value is taken"
+            )
         elif isinstance(beam, Beam):
             beam_pk = beam
         else:
-            raise TypeError('beam should be an instance of BeamArray or Beam')
-        self.sequence['setup'].gamma0 = beam_pk.g
-        self.sequence['time'].slen = np.amax(beam.s) - np.amin(beam.s)
-        self.sequence[name_list_id].gamma = beam_pk.g  # from [GeV] to [units of the electron rest mass]
+            raise TypeError("beam should be an instance of BeamArray or Beam")
+        self.sequence["setup"].gamma0 = beam_pk.g
+        self.sequence["time"].slen = np.amax(beam.s) - np.amin(beam.s)
+        self.sequence[
+            name_list_id
+        ].gamma = beam_pk.g  # from [GeV] to [units of the electron rest mass]
         self.sequence[name_list_id].delgam = beam_pk.dg
         self.sequence[name_list_id].current = beam_pk.I
         self.sequence[name_list_id].ex = beam_pk.emit_xn
@@ -376,10 +402,16 @@ class Genesis4Input:
 class Genesis4Attachments:
     # TODO: think about possibility to attach and write several dfls, lattices, etc.
     def __init__(self):
-        self.dfl = {}  # e.g. {key1: fld1, key2: fld2} where key is "_name_list_id" of Genesis4ImportFieldNL file should be written as <Genesis4ImportFieldNL.file>.fld
-        self.dpa = {}  # e.g. {key1: par1, key2: par2} where key is "_name_list_id" of Genesis4ImportBeamNL file should be written as <Genesis4ImportBeamNL.file>.par
+        self.dfl = (
+            {}
+        )  # e.g. {key1: fld1, key2: fld2} where key is "_name_list_id" of Genesis4ImportFieldNL file should be written as <Genesis4ImportFieldNL.file>.fld
+        self.dpa = (
+            {}
+        )  # e.g. {key1: par1, key2: par2} where key is "_name_list_id" of Genesis4ImportBeamNL file should be written as <Genesis4ImportBeamNL.file>.par
         self.beam = {}
-        self.lat = {}  # e.g. {key1: lat1, key2: lat2}, where key is the value of setup.lattice
+        self.lat = (
+            {}
+        )  # e.g. {key1: lat1, key2: lat2}, where key is the value of setup.lattice
 
 
 # def genesis4_input(input_sequence=tuple()):
@@ -389,6 +421,7 @@ class Genesis4Attachments:
 #        str_out += str(name_list)
 #        str_out += '&end\n\n'
 #    return str_out
+
 
 # %%
 class Genesis4NameList(object):
@@ -419,30 +452,30 @@ class Genesis4NameList(object):
     #     return output_list
 
     def name_list_id_set(self, name_list_id=None):
-        self._name_list_id = name_list_id if name_list_id is not None else self._name_list_label
+        self._name_list_id = (
+            name_list_id if name_list_id is not None else self._name_list_label
+        )
 
     def __str__(self):
-        str_out = ''
+        str_out = ""
         for attr, value in self.__dict__.items():
-            if attr.startswith('_'):
+            if attr.startswith("_"):
                 continue
             if value is True:
-                value = 'true'
+                value = "true"
             elif value is False:
-                value = 'false'
+                value = "false"
             if value is not None:
-                str_out += attr + ' = ' + str(value) + '\n'
+                str_out += attr + " = " + str(value) + "\n"
         return str_out
 
 
 class Genesis4SetupNL(Genesis4NameList):
-
-    def __init__(self,
-                 name_list_id=None):
+    def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'setup'
+        self._name_list_label = "setup"
         self.name_list_id_set(name_list_id)
-        self.rootname = 'output'  # name of all files generated by simulation
+        self.rootname = "output"  # name of all files generated by simulation
         self.lattice = None
         self.beamline = None
         self.gamma0 = None
@@ -458,7 +491,7 @@ class Genesis4SetupNL(Genesis4NameList):
 class Genesis4AlterSetupNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'alter_setup'
+        self._name_list_label = "alter_setup"
         self.name_list_id_set(name_list_id)
         self.rootname = None
         self.beamline = None
@@ -471,7 +504,7 @@ class Genesis4AlterSetupNL(Genesis4NameList):
 class Genesis4LatticeNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'lattice'
+        self._name_list_label = "lattice"
         self.name_list_id_set(name_list_id)
         self.zmatch = None
         self.element = None
@@ -484,7 +517,7 @@ class Genesis4LatticeNL(Genesis4NameList):
 class Genesis4TimeNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'time'
+        self._name_list_label = "time"
         self.name_list_id_set(name_list_id)
         self.s0 = None
         self.slen = None
@@ -495,7 +528,7 @@ class Genesis4TimeNL(Genesis4NameList):
 class Genesis4ProfileConstNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'profile_const'
+        self._name_list_label = "profile_const"
         self.name_list_id_set(name_list_id)
         self.label = None
         self.c0 = None
@@ -504,7 +537,7 @@ class Genesis4ProfileConstNL(Genesis4NameList):
 class Genesis4ProfileGaussNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'profile_gauss'
+        self._name_list_label = "profile_gauss"
         self.name_list_id_set(name_list_id)
         self.label = None
         self.c0 = None
@@ -515,7 +548,7 @@ class Genesis4ProfileGaussNL(Genesis4NameList):
 class Genesis4ProfileStepNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'profile_step'
+        self._name_list_label = "profile_step"
         self.name_list_id_set(name_list_id)
         self.label = None
         self.c0 = None
@@ -526,7 +559,7 @@ class Genesis4ProfileStepNL(Genesis4NameList):
 class Genesis4ProfilePolynomNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'profile_polynom'
+        self._name_list_label = "profile_polynom"
         self.name_list_id_set(name_list_id)
         self.label = None
         self.c0 = None
@@ -539,7 +572,7 @@ class Genesis4ProfilePolynomNL(Genesis4NameList):
 class Genesis4ProfileFileNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'profile_file'
+        self._name_list_label = "profile_file"
         self.name_list_id_set(name_list_id)
         self.label = None
         self.xdata = None
@@ -551,7 +584,7 @@ class Genesis4ProfileFileNL(Genesis4NameList):
 class Genesis4BeamNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'beam'
+        self._name_list_label = "beam"
         self.name_list_id_set(name_list_id)
         self.gamma = None
         self.delgam = None
@@ -575,10 +608,12 @@ class Genesis4BeamNL(Genesis4NameList):
 class Genesis4FieldNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'field'
+        self._name_list_label = "field"
         self.name_list_id_set(name_list_id)
         # setattr(self, 'lambda', None)
-        self.lambda_ = None  # must be lambda, but it is taken by Python for lambda-expressions
+        self.lambda_ = (
+            None  # must be lambda, but it is taken by Python for lambda-expressions
+        )
         self.power = None
         self.phase = None
         self.waist_pos = None
@@ -595,13 +630,13 @@ class Genesis4FieldNL(Genesis4NameList):
         self.accumulate = None
 
     def __str__(self):
-        return super(Genesis4FieldNL, self).__str__().replace('lambda_', 'lambda')
+        return super(Genesis4FieldNL, self).__str__().replace("lambda_", "lambda")
 
 
 class Genesis4ImportDistributionNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'importdistribution'
+        self._name_list_label = "importdistribution"
         self.name_list_id_set(name_list_id)
         self.file = None
         self.sdds = None
@@ -624,7 +659,7 @@ class Genesis4ImportDistributionNL(Genesis4NameList):
 class Genesis4ImportFieldNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'importfield'
+        self._name_list_label = "importfield"
         self.name_list_id_set(name_list_id)
         self.file = None
 
@@ -632,7 +667,7 @@ class Genesis4ImportFieldNL(Genesis4NameList):
 class Genesis4ImportBeamNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'importbeam'
+        self._name_list_label = "importbeam"
         self.name_list_id_set(name_list_id)
         self.file = None
 
@@ -640,7 +675,7 @@ class Genesis4ImportBeamNL(Genesis4NameList):
 class Genesis4EfieldNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'efield'
+        self._name_list_label = "efield"
         self.name_list_id_set(name_list_id)
         self.rmax = None
         self.nz = None
@@ -651,7 +686,7 @@ class Genesis4EfieldNL(Genesis4NameList):
 class Genesis4SponradNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'sponrad'
+        self._name_list_label = "sponrad"
         self.name_list_id_set(name_list_id)
         self.seed = None
         self.doLoss = None
@@ -661,14 +696,14 @@ class Genesis4SponradNL(Genesis4NameList):
 class Genesis4SortNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'sort'
+        self._name_list_label = "sort"
         self.name_list_id_set(name_list_id)
 
 
 class Genesis4WakeNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'wake'
+        self._name_list_label = "wake"
         self.name_list_id_set(name_list_id)
         self.loss = None
         self.radius = None
@@ -687,7 +722,7 @@ class Genesis4WakeNL(Genesis4NameList):
 class Genesis4WriteNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'write'
+        self._name_list_label = "write"
         self.name_list_id_set(name_list_id)
         self.field = None
         self.beam = None
@@ -696,7 +731,7 @@ class Genesis4WriteNL(Genesis4NameList):
 class Genesis4TrackNL(Genesis4NameList):
     def __init__(self, name_list_id=None):
         # super().__init__()
-        self._name_list_label = 'track'
+        self._name_list_label = "track"
         self.name_list_id_set(name_list_id)
         self.zstop = None
         self.output_step = None
@@ -708,9 +743,9 @@ class Genesis4TrackNL(Genesis4NameList):
 class Genesis4ParticlesDump:
     """
     Genesis particle *.dpa files storage object
-    Each particle record in z starts with the energy of all particles 
-    followed by the output of the particle phases, 
-    positions in x and y and the momenta in x and y. 
+    Each particle record in z starts with the energy of all particles
+    followed by the output of the particle phases,
+    positions in x and y and the momenta in x and y.
     The momenta are normalized to mc
     """
 
@@ -726,98 +761,105 @@ class Genesis4ParticlesDump:
         self.one4one = None
 
         # self.fileName = ''
-        self.filePath = ''
+        self.filePath = ""
 
     def fileName(self):
         return os.path.basename(self.filePath)
         # return filename_from_path(self.filePath)
 
 
-def gen4_lat_str(lat, line_name='LINE', zstop=np.inf):
+def gen4_lat_str(lat, line_name="LINE", zstop=np.inf):
     """
-    Generates a string of lattice 
+    Generates a string of lattice
     in Genesis4 format
     from an ocelot lattice object
     """
-    from ocelot.cpbd.elements import Undulator, Drift, Quadrupole, UnknownElement
+    from ocelot.cpbd.elements import Drift, Quadrupole, Undulator, UnknownElement
+
     lat_str = []
     beamline = []
     location = 0
 
     for element in lat.sequence:
-
         if location >= zstop:
             break
 
-        element_num = line_name + '_' + str(len(beamline) + 1).zfill(3)
+        element_num = line_name + "_" + str(len(beamline) + 1).zfill(3)
 
-        if hasattr(element, 'l'):
+        if hasattr(element, "l"):
             location += element.l
         else:
-            _logging.warning('[beta] element had no length: {:}'.format(str(element)))
+            _logging.warning("[beta] element had no length: {:}".format(str(element)))
 
         if isinstance(element, Undulator):
-            element_name = element_num + 'UND'
+            element_name = element_num + "UND"
 
             if element.Kx == 0 or element.Ky == 0:
-                is_helical = 'false'
+                is_helical = "false"
             elif element.Kx == element.Ky:
-                is_helical = 'true'
+                is_helical = "true"
             else:
                 _logger.warning(
-                    'undulator element with different non-zero Kx and Ky; not implemented; setting to helical')
-                is_helical = 'true'
-            aw = np.sqrt((element.Kx ** 2 + element.Ky ** 2) / 2)
+                    "undulator element with different non-zero Kx and Ky; not implemented; setting to helical"
+                )
+                is_helical = "true"
+            aw = np.sqrt((element.Kx**2 + element.Ky**2) / 2)
             # TODO: implement ax,ay,kx,ky,gradx,grady
-            s = '{:}: UNDULATOR = {{lambdau = {:}, nwig = {:}, aw = {:.6f}, helical = {:}}};'.format(element_name,
-                                                                                                     element.lperiod,
-                                                                                                     element.nperiods,
-                                                                                                     aw, is_helical)
+            s = "{:}: UNDULATOR = {{lambdau = {:}, nwig = {:}, aw = {:.6f}, helical = {:}}};".format(
+                element_name, element.lperiod, element.nperiods, aw, is_helical
+            )
 
         elif isinstance(element, Drift):
-            element_name = element_num + 'DR'
-            s = '{:}: DRIFT = {{l={:}}};'.format(element_name, element.l)
+            element_name = element_num + "DR"
+            s = "{:}: DRIFT = {{l={:}}};".format(element_name, element.l)
 
         elif isinstance(element, Quadrupole):
             # TODO: add dx and dy
             if element.k1 >= 0:
-                element_name = element_num + 'QF'
+                element_name = element_num + "QF"
             else:
-                element_name = element_num + 'QD'
-            s = '{:}: QUADRUPOLE = {{l = {:}, k1 = {:.6f} }};'.format(element_name, element.l, element.k1)
+                element_name = element_num + "QD"
+            s = "{:}: QUADRUPOLE = {{l = {:}, k1 = {:.6f} }};".format(
+                element_name, element.l, element.k1
+            )
 
         elif isinstance(element, Chicane):
-            element_name = element_num + 'CH'
-            s = '{:}: CHICANE = {{l = {:}, lb = {:}, ld = {}, delay = {:.5e} }};'.format(element_name, element.l,
-                                                                                         element.lb, element.ld,
-                                                                                         element.delay)
+            element_name = element_num + "CH"
+            s = "{:}: CHICANE = {{l = {:}, lb = {:}, ld = {}, delay = {:.5e} }};".format(
+                element_name, element.l, element.lb, element.ld, element.delay
+            )
 
         elif isinstance(element, Marker):
-            element_name = element_num + 'M'
-            m_dumpfield = getattr(element, 'dumpfield', 0)
-            m_dumpbeam = getattr(element, 'dumpbeam', 0)
-            m_sort = getattr(element, 'sort', 0)
-            m_stop = getattr(element, 'stop', 0)
-            s = '{:}: MARKER = {{dumpfield = {:}, dumpbeam = {:}, sort = {:}, stop = {:} }};'.format(element_name,
-                                                                                                     m_dumpfield,
-                                                                                                     m_dumpbeam, m_sort,
-                                                                                                     m_stop)
+            element_name = element_num + "M"
+            m_dumpfield = getattr(element, "dumpfield", 0)
+            m_dumpbeam = getattr(element, "dumpbeam", 0)
+            m_sort = getattr(element, "sort", 0)
+            m_stop = getattr(element, "stop", 0)
+            s = "{:}: MARKER = {{dumpfield = {:}, dumpbeam = {:}, sort = {:}, stop = {:} }};".format(
+                element_name, m_dumpfield, m_dumpbeam, m_sort, m_stop
+            )
 
         elif isinstance(element, Phaseshifter):
-            element_name = element_num + 'PH'
-            s = '{:}: PHASESHIFTER = {{l = {:}, phi = {:}}};'.format(element_name, element.l, element.phi)
+            element_name = element_num + "PH"
+            s = "{:}: PHASESHIFTER = {{l = {:}, phi = {:}}};".format(
+                element_name, element.l, element.phi
+            )
 
         else:
-            _logger.warning('Unknown element {} with length {}\n replacing with drift'.format(str(element), element.l))
-            element_name = element_num + 'UNKNOWN'
-            s = '{:}: DRIFT = {{l={:}}};'.format(element_name, element.l)
+            _logger.warning(
+                "Unknown element {} with length {}\n replacing with drift".format(
+                    str(element), element.l
+                )
+            )
+            element_name = element_num + "UNKNOWN"
+            s = "{:}: DRIFT = {{l={:}}};".format(element_name, element.l)
             continue
 
         beamline.append(element_name)
         lat_str.append(s)
 
-    lat_str.append('')
-    lat_str.append('{:}: LINE = {{{:}}};'.format(line_name, ','.join(beamline)))
+    lat_str.append("")
+    lat_str.append("{:}: LINE = {{{:}}};".format(line_name, ",".join(beamline)))
     lat_str = "\n".join(lat_str)
     _logger.debug(ind_str + lat_str)
     return lat_str
@@ -831,28 +873,36 @@ def write_gen4_lat(lattices, filepath, zstop=np.inf):
     :param zstop: dict with active lengths for each lattice in lattices dictionary (can be a double if len(lattices)==1)
     :return:
     """
-    _logger.info('writing genesis4 lattice')
-    _logger.debug(ind_str + 'writing to ' + filepath)
-    _logger.debug('lattices = {}'.format(str(lattices)))
-    f = open(filepath, 'w')  # erasing file content
-    f.write('# generated with Ocelot\n')
+    _logger.info("writing genesis4 lattice")
+    _logger.debug(ind_str + "writing to " + filepath)
+    _logger.debug("lattices = {}".format(str(lattices)))
+    f = open(filepath, "w")  # erasing file content
+    f.write("# generated with Ocelot\n")
 
     if not isinstance(zstop, dict):
         if type(lattices) != dict:
-            raise TypeError("type(lattices) != dict: lattices should be a dictionary with keys the same as lattices")
+            raise TypeError(
+                "type(lattices) != dict: lattices should be a dictionary with keys the same as lattices"
+            )
         else:
             lat_name = [key for key in lattices.keys()][0]
             zstop = {lat_name: zstop}
 
-
     for line_name, lat in zip(lattices.keys(), lattices.values()):
-        _logger.debug(ind_str + "line={}, lat={}, zstop={}".format(line_name, type(lat), zstop.get(line_name, np.inf)))
-        lat_str = gen4_lat_str(lat, line_name=line_name, zstop=zstop.get(line_name, np.inf))
+        _logger.debug(
+            ind_str
+            + "line={}, lat={}, zstop={}".format(
+                line_name, type(lat), zstop.get(line_name, np.inf)
+            )
+        )
+        lat_str = gen4_lat_str(
+            lat, line_name=line_name, zstop=zstop.get(line_name, np.inf)
+        )
         f.write(lat_str)
 
-    f.write('\n# end of file')
+    f.write("\n# end of file")
     f.close()
-    _logger.debug(ind_str + 'done')
+    _logger.debug(ind_str + "done")
 
 
 class Genesis4Output:
@@ -879,11 +929,11 @@ class Genesis4Output:
 
     @property
     def nSlices(self):
-        return self.h5['Beam/current'].size
+        return self.h5["Beam/current"].size
 
     @property
     def lambdaref(self):
-        return self.h5['Global/lambdaref'][0]
+        return self.h5["Global/lambdaref"][0]
 
     @property
     def phenref(self):
@@ -891,7 +941,7 @@ class Genesis4Output:
 
     @property
     def I(self):
-        return self.h5['Beam/current'][0]
+        return self.h5["Beam/current"][0]
 
     @property
     def beam_charge(self):
@@ -899,7 +949,7 @@ class Genesis4Output:
 
     @property
     def rad_power(self):
-        return self.h5['Field/power']
+        return self.h5["Field/power"]
 
     @property
     def rad_energy(self):
@@ -916,13 +966,13 @@ class Genesis4Output:
         else:
             return self.s / speed_of_light
 
-    def rad_field(self, zi=None, loc='near'):
-        if loc == 'far':
-            intens = self.h5['Field/intensity-farfield']
-            phase = self.h5['Field/phase-farfield']
-        elif loc == 'near':
-            intens = self.h5['Field/intensity-nearfield']
-            phase = self.h5['Field/phase-nearfield']
+    def rad_field(self, zi=None, loc="near"):
+        if loc == "far":
+            intens = self.h5["Field/intensity-farfield"]
+            phase = self.h5["Field/phase-farfield"]
+        elif loc == "near":
+            intens = self.h5["Field/intensity-nearfield"]
+            phase = self.h5["Field/phase-nearfield"]
         else:
             raise ValueError('loc should be either "far" or "near"')
 
@@ -934,16 +984,21 @@ class Genesis4Output:
         field = np.sqrt(intens[:]) * np.exp(1j * phase[:])
         return field
 
-    def calc_spec(self, zi=None, loc='near', npad=1, estimate_ph_sp_dens=1):
-
+    def calc_spec(self, zi=None, loc="near", npad=1, estimate_ph_sp_dens=1):
         field = self.rad_field(zi=zi, loc=loc)
         axis = field.ndim - 1
 
         spec = np.abs(np.fft.fft(field, axis=axis)) ** 2
         spec = np.fft.fftshift(spec, axes=axis)
 
-        scale_ev = h_eV_s * speed_of_light * (
-                np.fft.fftfreq(self.nSlices, d=self.s[1] - self.s[0]) + 1 / self.lambdaref)
+        scale_ev = (
+            h_eV_s
+            * speed_of_light
+            * (
+                np.fft.fftfreq(self.nSlices, d=self.s[1] - self.s[0])
+                + 1 / self.lambdaref
+            )
+        )
         scale_ev = np.fft.fftshift(scale_ev)
 
         if estimate_ph_sp_dens:
@@ -954,19 +1009,19 @@ class Genesis4Output:
             else:
                 if tt == 0:
                     tt = np.inf
-                spec *= (self.n_photons[zi] / tt)
+                spec *= self.n_photons[zi] / tt
 
         return scale_ev, spec
 
     def wig(self, z=np.inf):
-        return wigner_out(self, z=z, method='mp', debug=1)
+        return wigner_out(self, z=z, method="mp", debug=1)
 
     def close(self):
-        _logger.warning('closing h5 file {}'.format(self.filePath))
+        _logger.warning("closing h5 file {}".format(self.filePath))
         self.h5.close()
 
 
-def get_genesis4_launcher(launcher_program='genesis4', launcher_argument=''):
+def get_genesis4_launcher(launcher_program="genesis4", launcher_argument=""):
     """
     Returns MpiLauncher() object for given program
     """
@@ -975,7 +1030,7 @@ def get_genesis4_launcher(launcher_program='genesis4', launcher_argument=''):
     launcher = MpiLauncher()
     launcher.program = launcher_program
     launcher.argument = launcher_argument
-    launcher.mpiParameters = '-x PATH -x MPI_PYTHON_SITEARCH -x PYTHONPATH'  # added -n
+    launcher.mpiParameters = "-x PATH -x MPI_PYTHON_SITEARCH -x PYTHONPATH"  # added -n
     # launcher.program = '/data/netapp/xfel/products/genesis/genesis'
     # launcher.argument = ' < tmp.cmd | tee log'
 
@@ -990,17 +1045,17 @@ def run_genesis4(inp, launcher, *args, **kwargs):
     launcher          - MpiLauncher() object obtained via get_genesis_launcher() function
     """
     # import traceback
-    _logger.info('Starting genesis v4 preparation')
+    _logger.info("Starting genesis v4 preparation")
     # _logger.warning(len(traceback.extract_stack()))
 
     # create experimental directory
     if inp.run_dir is None and inp.exp_dir is None:
-        raise ValueError('run_dir and exp_dir are not specified!')
+        raise ValueError("run_dir and exp_dir are not specified!")
 
     if inp.run_dir is None:
         if inp.exp_dir[-1] != os.path.sep:
             inp.exp_dir += os.path.sep
-        inp.run_dir = inp.exp_dir + 'run_' + str(inp.runid) + '/'
+        inp.run_dir = inp.exp_dir + "run_" + str(inp.runid) + "/"
 
     try:
         os.makedirs(inp.run_dir)
@@ -1082,12 +1137,12 @@ def run_genesis4(inp, launcher, *args, **kwargs):
 
     # if inp.outputfile == None:
     # inp.outputfile = out_file
-    _logger.debug(ind_str + 'writing ' + inp_file)
-    open(inp_path, 'w').write(inp.input())
+    _logger.debug(ind_str + "writing " + inp_file)
+    open(inp_path, "w").write(inp.input())
     # open(inp.run_dir + 'tmp.cmd', 'w').write(inp_file + '\n')
 
     launcher.dir = inp.run_dir
-    _logger.debug(ind_str + 'preparing launcher')
+    _logger.debug(ind_str + "preparing launcher")
     launcher.prepare()
     # _logger.debug()
     # RUNNING GENESIS ###
@@ -1212,56 +1267,70 @@ def read_gout4(filePath):
     """
     Reads Genesis1.3 v4 output file with the link to the hdf5 file as out.h5
     to close the file, use out.h5.close()
-    
+
     :param filePath: string, absolute path to .out file
     :returns: Genesis4Output
     """
 
-    _logger.info('reading gen4 .out file')
-    _logger.warning(ind_str + 'in beta')
-    _logger.debug(ind_str + 'reading from ' + filePath)
+    _logger.info("reading gen4 .out file")
+    _logger.warning(ind_str + "in beta")
+    _logger.debug(ind_str + "reading from " + filePath)
 
     out = Genesis4Output()
     try:
-        out.h5 = h5py.File(filePath, 'r')
+        out.h5 = h5py.File(filePath, "r")
     except Exception:
-        _logger.error(ind_str + 'no such file ' + filePath)
+        _logger.error(ind_str + "no such file " + filePath)
         raise
 
-    if not ('Global' and 'Lattice' in out.h5):
-        _logger.warning('Not a valid .out file')
+    if not ("Global" and "Lattice" in out.h5):
+        _logger.warning("Not a valid .out file")
 
-    vvv = [int(out.h5['Meta/Version/' + name][0]) for name in ['Major', 'Minor', 'Revision']]
-    _logger.debug(ind_str + 'Genesis v{}.{}.{}'.format(*vvv))
+    vvv = [
+        int(out.h5["Meta/Version/" + name][0])
+        for name in ["Major", "Minor", "Revision"]
+    ]
+    _logger.debug(ind_str + "Genesis v{}.{}.{}".format(*vvv))
 
-    out.z = out.h5['Lattice/zplot'][:]
-    out.zlat = out.h5['Lattice/z'][:]
+    out.z = out.h5["Lattice/zplot"][:]
+    out.zlat = out.h5["Lattice/z"][:]
 
-    _logger.debug(ind_str + 'z[0]   , z[-1]   , len(z)    = {}  {}  {}'.format(out.z[0], out.z[-1], len(out.z)))
     _logger.debug(
-        ind_str + 'zlat[0], zlat[-1], len(zlat) = {}  {}  {}'.format(out.zlat[0], out.zlat[-1], len(out.zlat)))
+        ind_str
+        + "z[0]   , z[-1]   , len(z)    = {}  {}  {}".format(
+            out.z[0], out.z[-1], len(out.z)
+        )
+    )
+    _logger.debug(
+        ind_str
+        + "zlat[0], zlat[-1], len(zlat) = {}  {}  {}".format(
+            out.zlat[0], out.zlat[-1], len(out.zlat)
+        )
+    )
 
-    if 'time' in out.h5['Global'] and out.h5['Global/time'][0] == 1:
+    if "time" in out.h5["Global"] and out.h5["Global/time"][0] == 1:
         out.tdp = True
-        _logger.debug(ind_str + 'tdp = True')
+        _logger.debug(ind_str + "tdp = True")
     else:
         out.tdp = False
-        _logger.debug(ind_str + 'tdp = False')
+        _logger.debug(ind_str + "tdp = False")
 
-    if not out.tdp and out.h5['Beam/current'].size > 1:  # same as out.nSlices > 1:
-        _logger.error('time independent simulation with {} slices'.format(out.nSlices))
+    if not out.tdp and out.h5["Beam/current"].size > 1:  # same as out.nSlices > 1:
+        _logger.error("time independent simulation with {} slices".format(out.nSlices))
 
     if out.tdp:
-        if 's0' in out.h5['Global']:
-            s0 = out.h5['Global/s0']
-            _logger.debug(ind_str + 's0 = {}'.format(s0))
+        if "s0" in out.h5["Global"]:
+            s0 = out.h5["Global/s0"]
+            _logger.debug(ind_str + "s0 = {}".format(s0))
         else:
             s0 = 0
-        sn = out.h5['Beam/current'].size
-        out.s = np.linspace(s0, out.h5['Global/slen'][:][0] + s0, sn)
-        _logger.debug(ind_str + 's[0], s[-1], len(s) = {}  {}  {}'.format(out.s[0], out.s[-1], sn))
+        sn = out.h5["Beam/current"].size
+        out.s = np.linspace(s0, out.h5["Global/slen"][:][0] + s0, sn)
+        _logger.debug(
+            ind_str + "s[0], s[-1], len(s) = {}  {}  {}".format(out.s[0], out.s[-1], sn)
+        )
 
-    _logger.debug(ind_str + 'done')
+    _logger.debug(ind_str + "done")
 
     return out
 
@@ -1269,46 +1338,45 @@ def read_gout4(filePath):
 def read_dfl4(filePath):
     """
     Reads Genesis1.3 v4 radiation output file
-    
+
     :param filePath: string, absolute path to .fld file
     :returns: RadiationField
     """
-    _logger.info('reading gen4 .dfl file')
-    _logger.warning(ind_str + 'in beta')
-    _logger.debug(ind_str + 'reading from ' + filePath)
+    _logger.info("reading gen4 .dfl file")
+    _logger.warning(ind_str + "in beta")
+    _logger.debug(ind_str + "reading from " + filePath)
 
-    with h5py.File(filePath, 'r') as h5:
-
-        nslice = h5.get('slicecount')[0]
-        lambdaref = h5.get('wavelength')[0]
-        sepslice = h5.get('slicespacing')[0]
-        gridsize = h5.get('gridsize')[0]
+    with h5py.File(filePath, "r") as h5:
+        nslice = h5.get("slicecount")[0]
+        lambdaref = h5.get("wavelength")[0]
+        sepslice = h5.get("slicespacing")[0]
+        gridsize = h5.get("gridsize")[0]
         try:
-            ncar = h5.get('gridpoints')[0]
+            ncar = h5.get("gridpoints")[0]
         except:
             # legacy support
-            ncar = int(np.sqrt(h5.get('slice000001/field-real').size))  # fix?
+            ncar = int(np.sqrt(h5.get("slice000001/field-real").size))  # fix?
         zsep = int(sepslice / lambdaref)
         l_total = sepslice * nslice
 
-        _logger.debug(ind_str + 'nslice = {}'.format(nslice))
-        _logger.debug(ind_str + 'sepslice (dz) = {}'.format(sepslice))
-        _logger.debug(ind_str + 'lambdaref (xlamds) = {}'.format(lambdaref))
-        _logger.debug(ind_str + 'gridsize (dx & dy) = {}'.format(gridsize))
-        _logger.debug(ind_str + '')
-        _logger.debug(ind_str + 'zsep = {}'.format(zsep))
-        _logger.debug(ind_str + 'Nx & Ny = {}'.format(ncar))
-        _logger.debug(ind_str + 'Lx & Ly = {}'.format(ncar * gridsize))
-        _logger.debug(ind_str + 'Ls_total = {}'.format(l_total))
+        _logger.debug(ind_str + "nslice = {}".format(nslice))
+        _logger.debug(ind_str + "sepslice (dz) = {}".format(sepslice))
+        _logger.debug(ind_str + "lambdaref (xlamds) = {}".format(lambdaref))
+        _logger.debug(ind_str + "gridsize (dx & dy) = {}".format(gridsize))
+        _logger.debug(ind_str + "")
+        _logger.debug(ind_str + "zsep = {}".format(zsep))
+        _logger.debug(ind_str + "Nx & Ny = {}".format(ncar))
+        _logger.debug(ind_str + "Lx & Ly = {}".format(ncar * gridsize))
+        _logger.debug(ind_str + "Ls_total = {}".format(l_total))
 
         field_real = []
         field_imag = []
 
         for dset in h5:
-            if dset.startswith('slice0'):
-                _logger.log(5, '{}'.format(dset))
-                field_real.append(h5[dset]['field-real'][:].reshape(ncar, ncar))
-                field_imag.append(h5[dset]['field-imag'][:].reshape(ncar, ncar))
+            if dset.startswith("slice0"):
+                _logger.log(5, "{}".format(dset))
+                field_real.append(h5[dset]["field-real"][:].reshape(ncar, ncar))
+                field_imag.append(h5[dset]["field-imag"][:].reshape(ncar, ncar))
 
         dfl = RadiationField()
         dfl.fld = np.array(field_real) + 1j * np.array(field_imag)
@@ -1316,21 +1384,21 @@ def read_dfl4(filePath):
         dfl.dy = gridsize
         dfl.dz = sepslice
         dfl.xlamds = lambdaref
-        dfl.domain_z = 't'  # longitudinal domain (t - time, f - frequency)
-        dfl.domain_xy = 's'  # transverse domain (s - space, k - inverse space
+        dfl.domain_z = "t"  # longitudinal domain (t - time, f - frequency)
+        dfl.domain_xy = "s"  # transverse domain (s - space, k - inverse space
         dfl.filePath = h5.filename
         # legacy support
         try:
-            dfl.refposition = h5.get('refposition')[0]
+            dfl.refposition = h5.get("refposition")[0]
         except:
             pass
 
-    _logger.debug(ind_str + 'done')
+    _logger.debug(ind_str + "done")
 
     return dfl
 
 
-def write_dfl4(dfl: RadiationField, file_path='sample.dfl.h5'):
+def write_dfl4(dfl: RadiationField, file_path="sample.dfl.h5"):
     """
     Writes ocelot.optics.wave.RadiationField object to Genesis1.3 v4 radiation file
 
@@ -1338,117 +1406,132 @@ def write_dfl4(dfl: RadiationField, file_path='sample.dfl.h5'):
     :param file_path: path to .dfl file (file will be generate, or data will be rewritten)
     :return:
     """
-    _logger.info('writing gen4 file {}'.format(file_path))
-    _logger.warning(ind_str + 'in beta')
+    _logger.info("writing gen4 file {}".format(file_path))
+    _logger.warning(ind_str + "in beta")
 
-    _logger.debug(ind_str + 'writing to ' + file_path)
-    _logger.debug(ind_str + 'nslice = {}'.format(dfl.Nz()))
-    _logger.debug(ind_str + 'sepslice (dz) = {}'.format(dfl.xlamds))
-    _logger.debug(ind_str + 'lambdaref (xlamds) = {}'.format(dfl.dz))
+    _logger.debug(ind_str + "writing to " + file_path)
+    _logger.debug(ind_str + "nslice = {}".format(dfl.Nz()))
+    _logger.debug(ind_str + "sepslice (dz) = {}".format(dfl.xlamds))
+    _logger.debug(ind_str + "lambdaref (xlamds) = {}".format(dfl.dz))
     if dfl.dx != dfl.dy:
-        _logger.error('dfl.dx is not equal dfl.dy')
-        raise ValueError('dfl.dx is not equal dfl.dy')
+        _logger.error("dfl.dx is not equal dfl.dy")
+        raise ValueError("dfl.dx is not equal dfl.dy")
     else:
-        _logger.debug(ind_str + 'gridsize (dx & dy) = {}'.format(dfl.dx))
-    _logger.debug(ind_str + '')
-    _logger.debug(ind_str + 'zsep = {}'.format(int(dfl.dz / dfl.xlamds)))
+        _logger.debug(ind_str + "gridsize (dx & dy) = {}".format(dfl.dx))
+    _logger.debug(ind_str + "")
+    _logger.debug(ind_str + "zsep = {}".format(int(dfl.dz / dfl.xlamds)))
     if dfl.Nx() != dfl.Ny():
-        _logger.error('dfl.Nx() is not equal dfl.Ny()')
-        raise ValueError('dfl.Nx() is not equal dfl.Ny()')
+        _logger.error("dfl.Nx() is not equal dfl.Ny()")
+        raise ValueError("dfl.Nx() is not equal dfl.Ny()")
     else:
-        _logger.debug(ind_str + 'Nx & Ny = {}'.format(dfl.Nx()))
-    _logger.debug(ind_str + 'Lx & Ly = {}'.format(dfl.Lx()))
-    _logger.debug(ind_str + 'Ls_total = {}'.format(dfl.Lz()))
+        _logger.debug(ind_str + "Nx & Ny = {}".format(dfl.Nx()))
+    _logger.debug(ind_str + "Lx & Ly = {}".format(dfl.Lx()))
+    _logger.debug(ind_str + "Ls_total = {}".format(dfl.Lz()))
 
-    with h5py.File(file_path, 'w') as h5:
-
-        h5.create_dataset('slicecount', data=[dfl.Nz()])
-        h5.create_dataset('wavelength', data=[dfl.xlamds])
-        h5.create_dataset('slicespacing', data=[dfl.dz])
-        h5.create_dataset('gridsize', data=[dfl.dx])
-        h5.create_dataset('gridpoints', data=[dfl.Nx()])
+    with h5py.File(file_path, "w") as h5:
+        h5.create_dataset("slicecount", data=[dfl.Nz()])
+        h5.create_dataset("wavelength", data=[dfl.xlamds])
+        h5.create_dataset("slicespacing", data=[dfl.dz])
+        h5.create_dataset("gridsize", data=[dfl.dx])
+        h5.create_dataset("gridpoints", data=[dfl.Nx()])
         try:
-            h5.create_dataset('refposition', data=[dfl.refposition])
+            h5.create_dataset("refposition", data=[dfl.refposition])
         except:
-            h5.create_dataset('refposition', data=[0.0])
+            h5.create_dataset("refposition", data=[0.0])
 
         for i in range(dfl.Nz()):
-            _logger.log(5, 'slice{:06d}'.format(i + 1))
-            h5.create_dataset('slice{:06d}/field-real'.format(i + 1), data=np.real(dfl.fld[i]).flatten())
-            h5.create_dataset('slice{:06d}/field-imag'.format(i + 1), data=np.imag(dfl.fld[i]).flatten())
+            _logger.log(5, "slice{:06d}".format(i + 1))
+            h5.create_dataset(
+                "slice{:06d}/field-real".format(i + 1),
+                data=np.real(dfl.fld[i]).flatten(),
+            )
+            h5.create_dataset(
+                "slice{:06d}/field-imag".format(i + 1),
+                data=np.imag(dfl.fld[i]).flatten(),
+            )
 
-    _logger.debug(ind_str + 'done')
+    _logger.debug(ind_str + "done")
 
 
 def read_dpa4(filePath, start_slice=0, stop_slice=np.inf, estimate_npart=0, partskip=1):
     """
     Reads Genesis1.3 v4 particle output file
-    
+
     :param filePath: string, absolute path to .par file
     :partskip: int, allows to read every nth particle only to save space. (default=1)
     :estimate_npart: reads the header and estimates number of particles and type of simulation. 0 - no estimation. 1 - normal estimation with console output. 2 - estimation only, omitting the actual parsing of particles
     :returns: Genesis4ParticlesDump
     """
 
-    _logger.info('reading gen4 .dpa file')
-    _logger.warning(ind_str + 'in beta')
-    _logger.debug(ind_str + 'reading from ' + filePath)
+    _logger.info("reading gen4 .dpa file")
+    _logger.warning(ind_str + "in beta")
+    _logger.debug(ind_str + "reading from " + filePath)
 
     start_time = time.time()
 
-    _logger.debug(ind_str + 'start_slice : stop_slice = {} : {}'.format(start_slice, stop_slice))
-    
+    _logger.debug(
+        ind_str + "start_slice : stop_slice = {} : {}".format(start_slice, stop_slice)
+    )
+
     sl = slice(None, None, partskip)
-    
+
     if partskip > 1:
-        _logger.debug(ind_str + 'reading every {}st/th particle'.format(partskip))
-    
-    with h5py.File(filePath, 'r') as h5:
+        _logger.debug(ind_str + "reading every {}st/th particle".format(partskip))
 
-        one4one = bool(h5.get('one4one')[0])
-        _logger.info(ind_str + 'one4one = {}'.format(bool(one4one)))
+    with h5py.File(filePath, "r") as h5:
+        one4one = bool(h5.get("one4one")[0])
+        _logger.info(ind_str + "one4one = {}".format(bool(one4one)))
 
-        nslice = int(h5.get('slicecount')[0])
-        nbins = int(h5.get('beamletsize')[0])
-        lslice = h5.get('slicelength')[0]
-        sepslice = h5.get('slicespacing')[0]
+        nslice = int(h5.get("slicecount")[0])
+        nbins = int(h5.get("beamletsize")[0])
+        lslice = h5.get("slicelength")[0]
+        sepslice = h5.get("slicespacing")[0]
 
         if not one4one:
-            npart = int(h5.get('slice000001/gamma').size)  # fix?
-            _logger.debug(ind_str + 'npart = {}'.format(npart))
+            npart = int(h5.get("slice000001/gamma").size)  # fix?
+            _logger.debug(ind_str + "npart = {}".format(npart))
         else:
             if estimate_npart > 0:
                 I_tmp_full = []
                 I_tmp_wind = []
                 for dset in h5:
-                    if dset.startswith('slice') and type(h5[dset]) == h5py._hl.group.Group:
-                        slicen = int(dset.replace('slice', ''))
-                        I_tmp_full.append(h5[dset]['current'][:])
+                    if (
+                        dset.startswith("slice")
+                        and type(h5[dset]) == h5py._hl.group.Group
+                    ):
+                        slicen = int(dset.replace("slice", ""))
+                        I_tmp_full.append(h5[dset]["current"][:])
                         if slicen >= start_slice and slicen <= stop_slice:
-                            I_tmp_wind.append(h5[dset]['current'][:])
+                            I_tmp_wind.append(h5[dset]["current"][:])
                 npart_full_tmp = np.sum(I_tmp_full) * lslice / speed_of_light / q_e
                 npart_wind_tmp = np.sum(I_tmp_wind) * lslice / speed_of_light / q_e
-                _logger.info(ind_str + 'estimated npart = {:}M'.format(npart_full_tmp / 1e6))
-                _logger.info(ind_str + 'estimated npart to be downloaded = {:}.M'.format(npart_wind_tmp / partskip / 1e6))
+                _logger.info(
+                    ind_str + "estimated npart = {:}M".format(npart_full_tmp / 1e6)
+                )
+                _logger.info(
+                    ind_str
+                    + "estimated npart to be downloaded = {:}.M".format(
+                        npart_wind_tmp / partskip / 1e6
+                    )
+                )
 
         # filePath = h5.filename
 
         zsep = int(sepslice / lslice)
         # if one4one:
-            # l_total = lslice * nslice
+        # l_total = lslice * nslice
         # else:
-            # l_total = lslice * zsep * nslice
+        # l_total = lslice * zsep * nslice
         l_total = sepslice * nslice
-        
-        
-        _logger.debug(ind_str + 'nslice = {}'.format(nslice))
-        _logger.debug(ind_str + 'nbins = {}'.format(nbins))
-        _logger.debug(ind_str + '')
-        _logger.debug(ind_str + 'lslice (aka xlamds) = {} m'.format(lslice))
-        _logger.debug(ind_str + 'sepslice = {} m'.format(sepslice))
-        _logger.debug(ind_str + 'zsep = {}'.format(zsep))
-        _logger.debug(ind_str + 'Ls_total = {}'.format(l_total))
-        
+
+        _logger.debug(ind_str + "nslice = {}".format(nslice))
+        _logger.debug(ind_str + "nbins = {}".format(nbins))
+        _logger.debug(ind_str + "")
+        _logger.debug(ind_str + "lslice (aka xlamds) = {} m".format(lslice))
+        _logger.debug(ind_str + "sepslice = {} m".format(sepslice))
+        _logger.debug(ind_str + "zsep = {}".format(zsep))
+        _logger.debug(ind_str + "Ls_total = {}".format(l_total))
+
         dpa = Genesis4ParticlesDump()
         dpa.nslice = nslice
         dpa.lslice = lslice
@@ -1457,19 +1540,18 @@ def read_dpa4(filePath, start_slice=0, stop_slice=np.inf, estimate_npart=0, part
         dpa.zsep = zsep
         dpa.filePath = filePath
         dpa.one4one = one4one
-        
-        _logger.debug(ind_str + 'nslice = {}'.format(nslice))
-        _logger.debug(ind_str + 'nbins = {}'.format(nbins))
-        _logger.debug(ind_str + 'lslice (aka xlamds) = {} m'.format(lslice))
-        _logger.debug(ind_str + 'sepslice = {} m'.format(sepslice))
-        _logger.debug(ind_str + 'zsep = {}'.format(zsep))
-        _logger.debug(ind_str + 'Ls_total = {}'.format(l_total))
-        
+
+        _logger.debug(ind_str + "nslice = {}".format(nslice))
+        _logger.debug(ind_str + "nbins = {}".format(nbins))
+        _logger.debug(ind_str + "lslice (aka xlamds) = {} m".format(lslice))
+        _logger.debug(ind_str + "sepslice = {} m".format(sepslice))
+        _logger.debug(ind_str + "zsep = {}".format(zsep))
+        _logger.debug(ind_str + "Ls_total = {}".format(l_total))
+
         if estimate_npart == 2:
-            _logger.debug(ind_str + 'done in %.2f seconds' % (time.time() - start_time))
+            _logger.debug(ind_str + "done in %.2f seconds" % (time.time() - start_time))
             return dpa
-            
-        
+
         x = []
         y = []
         px = []
@@ -1480,39 +1562,45 @@ def read_dpa4(filePath, start_slice=0, stop_slice=np.inf, estimate_npart=0, part
         # s = []
         I = []
         npartpb = []
-        slicenum = [] #slice where the particle belongs
+        slicenum = []  # slice where the particle belongs
         slicelist = []
 
-        _logger.debug(ind_str + 'reading slices between {} and {}'.format(start_slice, stop_slice))
-        _logger.debug(2 * ind_str + '({} out of {})'.format(stop_slice - start_slice, nslice))
+        _logger.debug(
+            ind_str + "reading slices between {} and {}".format(start_slice, stop_slice)
+        )
+        _logger.debug(
+            2 * ind_str + "({} out of {})".format(stop_slice - start_slice, nslice)
+        )
         for dset in sorted(h5):
             # _logger.log(5, ind_str + dset)
             # _logger.log(5, ind_str + str(type(h5[dset])))
-            if dset.startswith('slice') and type(h5[dset]) == h5py._hl.group.Group:
-                slicen = int(dset.replace('slice', ''))
-                _logger.log(5, 2 * ind_str + 'slice number {}'.format(slicen))
+            if dset.startswith("slice") and type(h5[dset]) == h5py._hl.group.Group:
+                slicen = int(dset.replace("slice", ""))
+                _logger.log(5, 2 * ind_str + "slice number {}".format(slicen))
                 if slicen >= start_slice and slicen <= stop_slice:
-                    _logger.log(5, 2 * ind_str + 'processing')
-                    I.append(h5[dset]['current'][:])
-                    ph.append(h5[dset]['theta'][sl])
-                    _logger.log(5, 2 * ind_str + '{} particles'.format(h5[dset]['x'].size))
+                    _logger.log(5, 2 * ind_str + "processing")
+                    I.append(h5[dset]["current"][:])
+                    ph.append(h5[dset]["theta"][sl])
+                    _logger.log(
+                        5, 2 * ind_str + "{} particles".format(h5[dset]["x"].size)
+                    )
                     # s.append(s0 + ph0 / 2 / np.pi * lslice)
-                    x.append(h5[dset]['x'][sl])
-                    px.append(h5[dset]['px'][sl])
-                    y.append(h5[dset]['y'][sl])
-                    py.append(h5[dset]['py'][sl])
-                    g.append(h5[dset]['gamma'][sl])
-                    npartpbi = h5[dset]['gamma'][sl].size
+                    x.append(h5[dset]["x"][sl])
+                    px.append(h5[dset]["px"][sl])
+                    y.append(h5[dset]["y"][sl])
+                    py.append(h5[dset]["py"][sl])
+                    g.append(h5[dset]["gamma"][sl])
+                    npartpbi = h5[dset]["gamma"][sl].size
                     npartpb.append(npartpbi)
-                    slicenum.extend(list(np.ones(npartpbi, dtype=int)*slicen))
+                    slicenum.extend(list(np.ones(npartpbi, dtype=int) * slicen))
                     slicelist.append(slicen)
                     # ph.append(ph0)
                     # s0 += sepslice
-        _logger.debug(2 * ind_str + 'done')
-    
+        _logger.debug(2 * ind_str + "done")
+
     if one4one:
-        _logger.debug(ind_str + 'flattening arrays')
-        _logger.debug(ind_str + 'writing to dpa object')
+        _logger.debug(ind_str + "flattening arrays")
+        _logger.debug(ind_str + "writing to dpa object")
         # _logger.log(5, 2*ind_str + 'x.shape {}'.format(np.shape(x)))
         dpa.x = np.hstack(x)
         dpa.px = np.hstack(px)
@@ -1522,70 +1610,78 @@ def read_dpa4(filePath, start_slice=0, stop_slice=np.inf, estimate_npart=0, part
         dpa.I = np.hstack(I)
         dpa.ph = np.hstack(ph)
         dpa.slicenum = np.array(slicenum)
-        
-        _logger.log(5, 2 * ind_str + 'dpa.x.shape {}'.format(dpa.x.shape))
+
+        _logger.log(5, 2 * ind_str + "dpa.x.shape {}".format(dpa.x.shape))
 
         dpa.npartpb = np.array(npartpb).flatten()
 
         npart = dpa.x.size
-        _logger.info(ind_str + 'npart = {}'.format(npart))
-        
-        dpa.one4one_qp = q_e * partskip #particle charge, assuming that npart(original) >> partskip
+        _logger.info(ind_str + "npart = {}".format(npart))
+
+        dpa.one4one_qp = (
+            q_e * partskip
+        )  # particle charge, assuming that npart(original) >> partskip
     else:
         npartpb = int(npart / nbins)
         # _logger.debug(ind_str + 'not one4one:')
-        _logger.debug(2 * ind_str + 'shape of arrays (nslice, npart) {}'.format(np.array(x).shape))
+        _logger.debug(
+            2 * ind_str + "shape of arrays (nslice, npart) {}".format(np.array(x).shape)
+        )
 
         if np.array(x).shape[0] < nslice:
             nslice = np.array(x).shape[0]
 
         if nslice == 0:
-            _logger.error(2 * ind_str + 'nslice == 0')
+            _logger.error(2 * ind_str + "nslice == 0")
             return
 
         _logger.debug(
-            2 * ind_str + 'reshaping to (nslice, nbins, npart/bin) ({}, {}, {})'.format(nslice, nbins, npartpb))
-        _logger.debug(ind_str + 'writing to dpa object')
-        dpa.x = np.array(x).reshape((nslice, nbins, npartpb), order='F')
-        dpa.px = np.array(px).reshape((nslice, nbins, npartpb), order='F')
-        dpa.y = np.array(y).reshape((nslice, nbins, npartpb), order='F')
-        dpa.py = np.array(py).reshape((nslice, nbins, npartpb), order='F')
-        dpa.ph = np.array(ph).reshape((nslice, nbins, npartpb), order='F')
-        dpa.g = np.array(g).reshape((nslice, nbins, npartpb), order='F')
+            2 * ind_str
+            + "reshaping to (nslice, nbins, npart/bin) ({}, {}, {})".format(
+                nslice, nbins, npartpb
+            )
+        )
+        _logger.debug(ind_str + "writing to dpa object")
+        dpa.x = np.array(x).reshape((nslice, nbins, npartpb), order="F")
+        dpa.px = np.array(px).reshape((nslice, nbins, npartpb), order="F")
+        dpa.y = np.array(y).reshape((nslice, nbins, npartpb), order="F")
+        dpa.py = np.array(py).reshape((nslice, nbins, npartpb), order="F")
+        dpa.ph = np.array(ph).reshape((nslice, nbins, npartpb), order="F")
+        dpa.g = np.array(g).reshape((nslice, nbins, npartpb), order="F")
         dpa.I = np.array(I).flatten()
-    
-    
+
     dpa.npart = npart
     dpa.slicelist = np.array(slicelist)
 
-    _logger.debug(ind_str + 'done in %.2f seconds' % (time.time() - start_time))
-    
+    _logger.debug(ind_str + "done in %.2f seconds" % (time.time() - start_time))
+
     return dpa
 
 
 def dpa42edist(dpa, n_part=None, fill_gaps=False):
     """
     Convert Genesis1.3 v4 particle output file to ocelot edist object
-    
+
     :param dpa: GenesisParticlesDump
     :param n_part: desired approximate number of particles in edist
     :param fill_gaps: dublicates buckets into gaps
     :returns: GenesisElectronDist
     """
 
-    _logger.info('converting dpa4 to edist')
-    _logger.warning(ind_str + 'in beta')
+    _logger.info("converting dpa4 to edist")
+    _logger.warning(ind_str + "in beta")
 
     # if dpa.one4one is True:
     # _logger.warning(ind_str + 'not tested for one4one yet')
     # return
     if dpa.one4one is None:
-        _logger.error(ind_str + 'unknown one4one status')
+        _logger.error(ind_str + "unknown one4one status")
         return
 
     # fill_gaps=False #unfinished
 
     import random
+
     start_time = time.time()
 
     npart = dpa.npart
@@ -1594,23 +1690,27 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
     lslice = dpa.lslice
     zsep = dpa.zsep
 
-    _logger.debug(ind_str + 'requested n_part = {}'.format(n_part))
-    _logger.debug(ind_str + 'dpa npart = {}'.format(npart))
-    _logger.debug(ind_str + 'dpa nslice = {}'.format(nslice))
-    _logger.debug(ind_str + 'dpa nbins = {}'.format(nbins))
-    _logger.debug(ind_str + 'dpa lslice (aka xlamds) = {} m'.format(lslice))
-    _logger.debug(ind_str + 'dpa zsep = {}'.format(zsep))
-    _logger.debug(ind_str + '')
+    _logger.debug(ind_str + "requested n_part = {}".format(n_part))
+    _logger.debug(ind_str + "dpa npart = {}".format(npart))
+    _logger.debug(ind_str + "dpa nslice = {}".format(nslice))
+    _logger.debug(ind_str + "dpa nbins = {}".format(nbins))
+    _logger.debug(ind_str + "dpa lslice (aka xlamds) = {} m".format(lslice))
+    _logger.debug(ind_str + "dpa zsep = {}".format(zsep))
+    _logger.debug(ind_str + "")
 
-    _logger.debug(ind_str + 'fill_gaps = {}'.format(fill_gaps))
+    _logger.debug(ind_str + "fill_gaps = {}".format(fill_gaps))
 
     if dpa.one4one:
-        t0 = np.hstack([np.ones(n) * i for i, n in enumerate(dpa.npartpb)]) * dpa.sepslice / speed_of_light
+        t0 = (
+            np.hstack([np.ones(n) * i for i, n in enumerate(dpa.npartpb)])
+            * dpa.sepslice
+            / speed_of_light
+        )
         t0 += dpa.ph / 2 / np.pi * dpa.sepslice / speed_of_light
 
         edist = GenesisElectronDist()
 
-        #C = npart * q_e
+        # C = npart * q_e
         C = npart * dpa.one4one_qp
 
         if n_part is not None:
@@ -1622,8 +1722,8 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
             n_part = npart
             # particles_kept_ratio = 1
 
-        _logger.debug(ind_str + 'particles kept = {}%'.format(n_part / npart * 100))
-        _logger.debug(ind_str + 'picking {} of {} particles'.format(len(pick_i), npart))
+        _logger.debug(ind_str + "particles kept = {}%".format(n_part / npart * 100))
+        _logger.debug(ind_str + "picking {} of {} particles".format(len(pick_i), npart))
 
         if n_part == npart:
             edist.g = dpa.g
@@ -1640,7 +1740,7 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
             edist.y = dpa.y[pick_i]
             edist.t = t0[pick_i]
 
-        _logger.debug(2 * ind_str + 'done')
+        _logger.debug(2 * ind_str + "done")
 
     else:
         # if fill_gaps:
@@ -1654,22 +1754,30 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
         I = dpa.I
         dt = zsep * lslice / speed_of_light
         # dt = (s[1] - s[0]) / speed_of_light
-        _logger.debug(ind_str + 'dt zsep = {} s'.format(dt))
+        _logger.debug(ind_str + "dt zsep = {} s".format(dt))
 
         C = np.sum(I) * dt
 
-        _logger.debug(ind_str + 'current max = {} A'.format(I.max()))
-        _logger.debug(ind_str + 'bunch charge = {} C'.format(C))
+        _logger.debug(ind_str + "current max = {} A".format(I.max()))
+        _logger.debug(ind_str + "bunch charge = {} C".format(C))
 
         n_part_max = int(np.floor(np.sum(I / I.max() * dpa.npart)))
-        _logger.debug(ind_str + 'maximum possible n_part = {}'.format(n_part_max))
+        _logger.debug(ind_str + "maximum possible n_part = {}".format(n_part_max))
         if n_part is not None:
-            _logger.debug(ind_str + 'requested n_part = {}'.format(n_part))
+            _logger.debug(ind_str + "requested n_part = {}".format(n_part))
             if n_part > n_part_max:
-                _logger.info(ind_str + 'requested n_part > maximum, setting to maximum = {}'.format(n_part_max))
+                _logger.info(
+                    ind_str
+                    + "requested n_part > maximum, setting to maximum = {}".format(
+                        n_part_max
+                    )
+                )
                 n_part = n_part_max
         else:
-            _logger.info(ind_str + 'requested n_part = None, setting to maximum = {}'.format(n_part_max))
+            _logger.info(
+                ind_str
+                + "requested n_part = None, setting to maximum = {}".format(n_part_max)
+            )
             n_part = n_part_max
 
         # n_part_bin = (I / np.sum(I) * n_part / nbins).astype(int)
@@ -1678,7 +1786,7 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
         n_part_slice = (I / np.sum(I) * n_part).astype(int)
         n_part_slice[n_part_slice > npart] = npart
 
-        _logger.debug(ind_str + 'max particles/slice = {}'.format(n_part_slice.max()))
+        _logger.debug(ind_str + "max particles/slice = {}".format(n_part_slice.max()))
 
         # print(n_part_slice.max())
 
@@ -1717,7 +1825,7 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
         yi = []
         ti = []
 
-        _logger.debug(ind_str + 'picking random particles')
+        _logger.debug(ind_str + "picking random particles")
         for i in np.arange(nslice):
             #    for ii in np.arange(nbins):
             #    pick_i = random.sample(range(npart_bin), n_part_bin[i])
@@ -1727,7 +1835,7 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
             # edist.g = np.append(edist.g, g[i, pick_i])
             # edist.xp = np.append(edist.xp, px[i, pick_i])
             # edist.yp = np.append(edist.yp, py[i, pick_i])
-            # edist.x = np.append(edist.x, x[i, pick_i])  
+            # edist.x = np.append(edist.x, x[i, pick_i])
             # edist.y = np.append(edist.y, y[i, pick_i])
             # edist.t = np.append(edist.t, t[i, pick_i])
             _logger.log(5, "  shape before: {}".format(str(g.shape)))
@@ -1752,84 +1860,99 @@ def dpa42edist(dpa, n_part=None, fill_gaps=False):
         _logger.log(5, "  shape after flattening: {}".format(str(edist.g.shape)))
 
         if fill_gaps:
-            _logger.info(ind_str + 'randomly distributing particles in time between buckets')
-            edist.t += np.random.randint(0, dpa.zsep, edist.t.size) * lslice / speed_of_light
+            _logger.info(
+                ind_str + "randomly distributing particles in time between buckets"
+            )
+            edist.t += (
+                np.random.randint(0, dpa.zsep, edist.t.size) * lslice / speed_of_light
+            )
 
         # particles_kept_ratio = 1
 
     edist.part_charge = C / edist.len()
-    _logger.debug('')
+    _logger.debug("")
 
-    _logger.debug(ind_str + 'edist bunch charge = {} C'.format(C))
+    _logger.debug(ind_str + "edist bunch charge = {} C".format(C))
     _logger.debug(
-        ind_str + 'edist particle charge = {} C (~{:.2f}*q_e)'.format(edist.part_charge, edist.part_charge / q_e))
-    _logger.debug(ind_str + 'edist n_part = {}'.format(edist.len()))
+        ind_str
+        + "edist particle charge = {} C (~{:.2f}*q_e)".format(
+            edist.part_charge, edist.part_charge / q_e
+        )
+    )
+    _logger.debug(ind_str + "edist n_part = {}".format(edist.len()))
 
-    if hasattr(dpa, 'filePath'):
-        edist.filePath = dpa.filePath + '.edist'
+    if hasattr(dpa, "filePath"):
+        edist.filePath = dpa.filePath + ".edist"
 
-    _logger.debug(ind_str + 'done')
+    _logger.debug(ind_str + "done")
 
     return edist
 
 
 def read_dpa42parray(filePath, N_part=None, fill_gaps=True):
-    _logger.info('reading gen4 .dpa file into parray')
-    _logger.warning(ind_str + 'in beta, fix situation with harmonic jump resulting in sepslice > lslice')
-    _logger.debug(ind_str + 'reading from ' + filePath)
+    _logger.info("reading gen4 .dpa file into parray")
+    _logger.warning(
+        ind_str
+        + "in beta, fix situation with harmonic jump resulting in sepslice > lslice"
+    )
+    _logger.debug(ind_str + "reading from " + filePath)
 
     import random
+
     N_part = None
 
     # N_part = 100000
     fill_gaps = True
-    _logger.debug('fill_gaps = ' + str(fill_gaps))
+    _logger.debug("fill_gaps = " + str(fill_gaps))
 
-    h5 = h5py.File(filePath, 'r')
+    h5 = h5py.File(filePath, "r")
 
-    nslice = int(h5.get('slicecount')[0])
-    lslice = h5.get('slicelength')[0]
-    sepslice = h5.get('slicespacing')[0]
-    npart = int(h5.get('slice000001/gamma').size)
-    nbins = int(h5.get('beamletsize')[0])
+    nslice = int(h5.get("slicecount")[0])
+    lslice = h5.get("slicelength")[0]
+    sepslice = h5.get("slicespacing")[0]
+    npart = int(h5.get("slice000001/gamma").size)
+    nbins = int(h5.get("beamletsize")[0])
     zsep = int(sepslice / lslice)
 
-    one4one = bool(h5.get('one4one')[0])
+    one4one = bool(h5.get("one4one")[0])
     if one4one:
-        _logger.error('read_dpa42parray does not support one4one, yet')
-        raise ValueError('read_dpa42parray does not support one4one, yet')
+        _logger.error("read_dpa42parray does not support one4one, yet")
+        raise ValueError("read_dpa42parray does not support one4one, yet")
 
-    _logger.debug('nslice = ' + str(nslice))
-    _logger.debug('lslice = ' + str(lslice) + 'm')
-    _logger.debug('sepslice = ' + str(sepslice) + 'm')
-    _logger.debug('zsep = ' + str(zsep))
-    _logger.debug('npart = ' + str(npart))
-    _logger.debug('nbins = ' + str(nbins))
+    _logger.debug("nslice = " + str(nslice))
+    _logger.debug("lslice = " + str(lslice) + "m")
+    _logger.debug("sepslice = " + str(sepslice) + "m")
+    _logger.debug("zsep = " + str(zsep))
+    _logger.debug("npart = " + str(npart))
+    _logger.debug("nbins = " + str(nbins))
 
     I = []
     for dset in h5:
-        if dset.startswith('slice0'):
-            I.append(h5[dset]['current'][0])
+        if dset.startswith("slice0"):
+            I.append(h5[dset]["current"][0])
     I = np.array(I)
 
     dt = zsep * lslice / speed_of_light
-    _logger.debug('dt = ' + str(dt) + 'sec')
+    _logger.debug("dt = " + str(dt) + "sec")
 
     N_part_max = np.sum(
-        I / I.max() * npart)  # total maximum reasonable number of macroparticles of the same charge that can be extracted
+        I / I.max() * npart
+    )  # total maximum reasonable number of macroparticles of the same charge that can be extracted
 
     if N_part is not None:
         if N_part > N_part_max:
             N_part = int(np.floor(N_part_max))
     else:
         N_part = int(np.floor(N_part_max))
-    _logger.debug('Number of particles max= ' + str(N_part))
+    _logger.debug("Number of particles max= " + str(N_part))
 
-    n_part_slice = (I / np.sum(I) * N_part).astype(int)  # array of number of particles per new bin
+    n_part_slice = (I / np.sum(I) * N_part).astype(
+        int
+    )  # array of number of particles per new bin
     n_part_slice[n_part_slice > npart] = npart
 
     N_part_act = np.sum(n_part_slice)  # actual number of particles
-    _logger.debug('Number of particles actual= ' + str(N_part_act))
+    _logger.debug("Number of particles actual= " + str(N_part_act))
 
     dt = zsep * lslice / speed_of_light
     C = np.sum(I) * dt  # total charge
@@ -1846,16 +1969,16 @@ def read_dpa42parray(filePath, N_part=None, fill_gaps=True):
     s = []
 
     for dset in h5:
-        if dset.startswith('slice0'):
-            i = int(dset.strip('/slice')) - 1
+        if dset.startswith("slice0"):
+            i = int(dset.strip("/slice")) - 1
             if len(pick_i[i]) > 0:
-                ph0 = h5[dset]['theta'].value[pick_i[i]]
+                ph0 = h5[dset]["theta"].value[pick_i[i]]
                 s.append(i * zsep * lslice + ph0 / 2 / np.pi * lslice)
-                x.append(np.array(h5[dset]['x'].value[pick_i[i]]))
-                px.append(np.array(h5[dset]['px'].value[pick_i[i]]))
-                y.append(np.array(h5[dset]['y'].value[pick_i[i]]))
-                py.append(np.array(h5[dset]['py'].value[pick_i[i]]))
-                g.append(np.array(h5[dset]['gamma'].value[pick_i[i]]))
+                x.append(np.array(h5[dset]["x"].value[pick_i[i]]))
+                px.append(np.array(h5[dset]["px"].value[pick_i[i]]))
+                y.append(np.array(h5[dset]["y"].value[pick_i[i]]))
+                py.append(np.array(h5[dset]["py"].value[pick_i[i]]))
+                g.append(np.array(h5[dset]["gamma"].value[pick_i[i]]))
 
     p_array = ParticleArray()
     p_array.rparticles = np.empty((6, N_part_act))
@@ -1863,7 +1986,7 @@ def read_dpa42parray(filePath, N_part=None, fill_gaps=True):
     g = np.concatenate(g).ravel()
     g0 = np.mean(g)  # average gamma
     p_array.E = g0 * m_e_GeV  # average energy in GeV
-    p0 = np.sqrt(g0 ** 2 - 1) * m_e_eV / speed_of_light
+    p0 = np.sqrt(g0**2 - 1) * m_e_eV / speed_of_light
 
     p_array.rparticles[0] = np.concatenate(x).ravel()  # position in x in meters
     p_array.rparticles[1] = np.concatenate(px).ravel() / g0  # divergence in x
@@ -1883,103 +2006,108 @@ def read_dpa42parray(filePath, N_part=None, fill_gaps=True):
 
 # MOVE TO BEAM
 def write_edist_hdf5(edist, filepath, exist_ok=True):
-    _logger.info('writing electron distribution to {}'.format(filepath))
-    os.makedirs(filepath[:filepath.rindex(os.path.sep)], exist_ok=True)
-    with h5py.File(filepath, 'w') as h5:
-        h5.create_dataset('p', data=edist.g)
-        h5.create_dataset('t', data=-edist.t)
-        h5.create_dataset('x', data=edist.x)
-        h5.create_dataset('y', data=edist.y)
-        h5.create_dataset('xp', data=edist.xp)
-        h5.create_dataset('yp', data=edist.yp)
+    _logger.info("writing electron distribution to {}".format(filepath))
+    os.makedirs(filepath[: filepath.rindex(os.path.sep)], exist_ok=True)
+    with h5py.File(filepath, "w") as h5:
+        h5.create_dataset("p", data=edist.g)
+        h5.create_dataset("t", data=-edist.t)
+        h5.create_dataset("x", data=edist.x)
+        h5.create_dataset("y", data=edist.y)
+        h5.create_dataset("xp", data=edist.xp)
+        h5.create_dataset("yp", data=edist.yp)
         # h5.create_dataset('charge', data=[edist.charge()])
         # h5.create_dataset('part_charge', data=[edist.part_charge])
-    _logger.debug(ind_str + 'done')
+    _logger.debug(ind_str + "done")
 
 
 def read_edist_hdf5(filepath, charge=None):
-    _logger.info('reading electron distribution from {}'.format(filepath))
+    _logger.info("reading electron distribution from {}".format(filepath))
     edist = GenesisElectronDist()
-    with h5py.File(filepath, 'r') as h5:
-
-        edist.g = h5.get('p')[:]
-        edist.t = -h5.get('t')[:]
-        edist.x = h5.get('x')[:]
-        edist.y = h5.get('y')[:]
-        edist.xp = h5.get('xp')[:]
-        edist.yp = h5.get('yp')[:]
+    with h5py.File(filepath, "r") as h5:
+        edist.g = h5.get("p")[:]
+        edist.t = -h5.get("t")[:]
+        edist.x = h5.get("x")[:]
+        edist.y = h5.get("y")[:]
+        edist.xp = h5.get("xp")[:]
+        edist.yp = h5.get("yp")[:]
         npart = len(edist.g)
-        
+
         try:
-            edist.part_charge = h5.get('part_charge')
-            _logger.debug('retrieved edist charge per particle = {}'.format(edist.part_charge))
+            edist.part_charge = h5.get("part_charge")
+            _logger.debug(
+                "retrieved edist charge per particle = {}".format(edist.part_charge)
+            )
         except TyprError:
             edist.part_charge = None
-            _logger.warn('no part_charge in edist')
-        
+            _logger.warn("no part_charge in edist")
+
         if charge != None:
             edist.part_charge = charge / npart
-            _logger.debug('particle charge is overriden to {}'.format(edist.part_charge))
+            _logger.debug(
+                "particle charge is overriden to {}".format(edist.part_charge)
+            )
         else:
             if edist.part_charge == None:
-                _logger.warn('particle charge was not provided neither in the file nor as an argument')
-        
+                _logger.warn(
+                    "particle charge was not provided neither in the file nor as an argument"
+                )
+
     return edist
 
 
 def write_beamtwiss_hdf5(beam, filepath):
-    _logger.info('writing electron beam (twiss) to {}'.format(filepath))
-    with h5py.File(filepath, 'w') as h5:
-        h5.create_dataset('s', data=beam.s)
-        h5.create_dataset('gamma', data=beam.g)
-        h5.create_dataset('delgam', data=beam.dg)
-        h5.create_dataset('current', data=beam.I)
-        h5.create_dataset('ex', data=beam.emit_xn)
-        h5.create_dataset('ey', data=beam.emit_yn)
-        h5.create_dataset('betax', data=beam.beta_x)
-        h5.create_dataset('betay', data=beam.beta_y)
-        h5.create_dataset('alphax', data=beam.alpha_x)
-        h5.create_dataset('alphay', data=beam.alpha_y)
-        h5.create_dataset('xcenter', data=beam.x)
-        h5.create_dataset('ycenter', data=beam.y)
-        h5.create_dataset('pxcenter', data=beam.px)
-        h5.create_dataset('pycenter', data=beam.py)
-        if hasattr(beam, 'bunch'):
-            h5.create_dataset('bunch', data=beam.bunch)
+    _logger.info("writing electron beam (twiss) to {}".format(filepath))
+    with h5py.File(filepath, "w") as h5:
+        h5.create_dataset("s", data=beam.s)
+        h5.create_dataset("gamma", data=beam.g)
+        h5.create_dataset("delgam", data=beam.dg)
+        h5.create_dataset("current", data=beam.I)
+        h5.create_dataset("ex", data=beam.emit_xn)
+        h5.create_dataset("ey", data=beam.emit_yn)
+        h5.create_dataset("betax", data=beam.beta_x)
+        h5.create_dataset("betay", data=beam.beta_y)
+        h5.create_dataset("alphax", data=beam.alpha_x)
+        h5.create_dataset("alphay", data=beam.alpha_y)
+        h5.create_dataset("xcenter", data=beam.x)
+        h5.create_dataset("ycenter", data=beam.y)
+        h5.create_dataset("pxcenter", data=beam.px)
+        h5.create_dataset("pycenter", data=beam.py)
+        if hasattr(beam, "bunch"):
+            h5.create_dataset("bunch", data=beam.bunch)
         else:
-            h5.create_dataset('bunch', data=np.zeros_like(beam.s))
-        if hasattr(beam, 'bunchphase'):
-            h5.create_dataset('bunchphase', data=beam.bunchphase)
+            h5.create_dataset("bunch", data=np.zeros_like(beam.s))
+        if hasattr(beam, "bunchphase"):
+            h5.create_dataset("bunchphase", data=beam.bunchphase)
         else:
-            h5.create_dataset('bunchphase', data=np.zeros_like(beam.s))
-        if hasattr(beam, 'emod'):
-            h5.create_dataset('emod', data=beam.emod)
+            h5.create_dataset("bunchphase", data=np.zeros_like(beam.s))
+        if hasattr(beam, "emod"):
+            h5.create_dataset("emod", data=beam.emod)
         else:
-            h5.create_dataset('emod', data=np.zeros_like(beam.s))
-        if hasattr(beam, 'emodphase'):
-            h5.create_dataset('emodphase', data=beam.emodphase)
+            h5.create_dataset("emod", data=np.zeros_like(beam.s))
+        if hasattr(beam, "emodphase"):
+            h5.create_dataset("emodphase", data=beam.emodphase)
         else:
-            h5.create_dataset('emodphase', data=np.zeros_like(beam.s))
-    _logger.debug(ind_str + 'done')
+            h5.create_dataset("emodphase", data=np.zeros_like(beam.s))
+    _logger.debug(ind_str + "done")
 
 
 def read_beamtwiss_hdf5(filepath):
-    _logger.info('reading electron beam (twiss) from {}'.format(filepath))
+    _logger.info("reading electron beam (twiss) from {}".format(filepath))
     beam = BeamArray()
-    with h5py.File(filepath, 'r') as h5:
-        beam.s = h5.get('s')[:]
-        beam.g = h5.get('gamma')[:]
-        beam.dg = h5.get('delgam')[:]
-        beam.I = h5.get('current')[:]
-        beam.emit_xn = h5.get('ex')[:]
-        beam.emit_yn = h5.get('ey')[:]
-        beam.beta_x = h5.get('betax')[:]
-        beam.beta_y = h5.get('betay')[:]
-        beam.alpha_x = h5.get('alphax')[:]
-        beam.alpha_y = h5.get('alphay')[:]
-        beam.x = h5.get('xcenter')[:]
-        beam.y = h5.get('ycenter')[:]
-        beam.px = h5.get('pxcenter')[:]
-        beam.py = h5.get('pycenter')[:]
-    _logger.debug(ind_str + 'done')
+    with h5py.File(filepath, "r") as h5:
+        beam.s = h5.get("s")[:]
+        beam.g = h5.get("gamma")[:]
+        beam.dg = h5.get("delgam")[:]
+        beam.I = h5.get("current")[:]
+        beam.emit_xn = h5.get("ex")[:]
+        beam.emit_yn = h5.get("ey")[:]
+        beam.beta_x = h5.get("betax")[:]
+        beam.beta_y = h5.get("betay")[:]
+        beam.alpha_x = h5.get("alphax")[:]
+        beam.alpha_y = h5.get("alphay")[:]
+        beam.x = h5.get("xcenter")[:]
+        beam.y = h5.get("ycenter")[:]
+        beam.px = h5.get("pxcenter")[:]
+        beam.py = h5.get("pycenter")[:]
+    _logger.debug(ind_str + "done")
     return beam

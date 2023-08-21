@@ -1,9 +1,9 @@
-__author__ = 'Sergey Tomin'
+__author__ = "Sergey Tomin"
 
-import os
 import multiprocessing
+import os
 
-num_thread_default = str(int(multiprocessing.cpu_count()/2))
+num_thread_default = str(int(multiprocessing.cpu_count() / 2))
 
 
 OCELOT_NUM_THREADS = os.environ.get("OCELOT_NUM_THREADS", num_thread_default)

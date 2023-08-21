@@ -1,23 +1,32 @@
-import os
 import functools
+import os
 
 import ocelot
-from ocelot.gui.beam_plot import *
 from ocelot.adaptors.genesis4 import *
+from ocelot.gui.beam_plot import *
 from ocelot.gui.genesis4_plot import *
 
 _logger = logging.getLogger(__name__)
 ocelog.setLevel(logging.INFO)
 
-sim_directory = r'/gpfs/exfel/data/scratch/svitozar/projects/ocelot_test/genesis4/Ocelot/preprocessor_local/'
+sim_directory = r"/gpfs/exfel/data/scratch/svitozar/projects/ocelot_test/genesis4/Ocelot/preprocessor_local/"
 
-E_photon = 7000 #eV
+E_photon = 7000  # eV
 
-beam = generate_beam(E=14.0, dE=2.5e-3, I=5000, l_beam=1e-6, emit_n=0.5e-6, beta=20, l_window=6e-6, shape='gaussian')
+beam = generate_beam(
+    E=14.0,
+    dE=2.5e-3,
+    I=5000,
+    l_beam=1e-6,
+    emit_n=0.5e-6,
+    beta=20,
+    l_window=6e-6,
+    shape="gaussian",
+)
 tws_beam = Twiss(beam.pk())
 # beam.add_chirp_poly(coeff=[0.0, +5., -1, -0, 0.01], s0=None)
 
-sase_lat_pkg = create_fel_beamline('sase1')
+sase_lat_pkg = create_fel_beamline("sase1")
 prepare_el_optics(beam, sase_lat_pkg, E_photon=E_photon, beta_av=20)
 
 # tws_beam = Twiss(beam.pk())
@@ -30,32 +39,43 @@ sase_lat, _, _ = sase_lat_pkg
 
 # Create input container object
 ginp = Genesis4Input()
-ginp.filename = 'sase1.in'
-ginp.make_sequence(['setup', 'time', 'lattice', 'field', 'importdistribution', 'sponrad', 'track', 'write']) # defines an order of the the namelists
+ginp.filename = "sase1.in"
+ginp.make_sequence(
+    [
+        "setup",
+        "time",
+        "lattice",
+        "field",
+        "importdistribution",
+        "sponrad",
+        "track",
+        "write",
+    ]
+)  # defines an order of the the namelists
 
 # Edit name lists
-ginp.sequence['setup'].rootname = 'sase1'
-ginp.sequence['setup'].lattice = 'sase1.lat'
-ginp.sequence['setup'].beamline = 'SASE1'
+ginp.sequence["setup"].rootname = "sase1"
+ginp.sequence["setup"].lattice = "sase1.lat"
+ginp.sequence["setup"].beamline = "SASE1"
 # ginp.sequence['setup'].gamma0 = 11357.82 # inserted using ginp.populate_sequence_beam()
-ginp.sequence['setup'].lambda0 = eV2lambda(E_photon) # reference wavelength
-ginp.sequence['setup'].delz = 0.1 # integration period [m]
-ginp.sequence['setup'].seed = 123456789 # (ipseed in gen2)
-ginp.sequence['setup'].npart = 8192
-ginp.sequence['setup'].nbins = 4
-ginp.sequence['setup'].one4one = 0
-ginp.sequence['setup'].shotnoise = 1
+ginp.sequence["setup"].lambda0 = eV2lambda(E_photon)  # reference wavelength
+ginp.sequence["setup"].delz = 0.1  # integration period [m]
+ginp.sequence["setup"].seed = 123456789  # (ipseed in gen2)
+ginp.sequence["setup"].npart = 8192
+ginp.sequence["setup"].nbins = 4
+ginp.sequence["setup"].one4one = 0
+ginp.sequence["setup"].shotnoise = 1
 
-#ginp.sequence['lattice'].zmatch = 20 # optional, already matched with OCELOT
+# ginp.sequence['lattice'].zmatch = 20 # optional, already matched with OCELOT
 
-ginp.sequence['time'].slen = 5e-7 # [m] length of time window
-ginp.sequence['time'].sample = 30 # sampling in wavelengths ("zsep" in gen2)
-ginp.sequence['time'].time = 1 #time-dependent
+ginp.sequence["time"].slen = 5e-7  # [m] length of time window
+ginp.sequence["time"].sample = 30  # sampling in wavelengths ("zsep" in gen2)
+ginp.sequence["time"].time = 1  # time-dependent
 
-ginp.sequence['field'].power = 10e3 #small value to see both seed and noise
-ginp.sequence['field'].dgrid = 1e-04
-ginp.sequence['field'].ngrid = 151 # ("ncar" in gen2)
-ginp.sequence['field'].waist_size = 30e-6
+ginp.sequence["field"].power = 10e3  # small value to see both seed and noise
+ginp.sequence["field"].dgrid = 1e-04
+ginp.sequence["field"].ngrid = 151  # ("ncar" in gen2)
+ginp.sequence["field"].waist_size = 30e-6
 
 # ginp.sequence['beam'].gamma = 27397.321010594387
 # ginp.sequence['beam'].delgam = 4.8923787518918544
@@ -76,29 +96,33 @@ ginp.sequence['field'].waist_size = 30e-6
 # ginp.sequence['beam'].emodphase = 0
 # ginp.populate_sequence_beam(beam, 'beam#imported') # fills in all values from the Beam object
 
-ginp.sequence['importdistribution'].file = 'edist.h5'
+ginp.sequence["importdistribution"].file = "edist.h5"
 
 
-ginp.sequence['sponrad'].seed = 123123 # for quantum fluctuation
-ginp.sequence['sponrad'].doLoss = 1 # (isravg in gen2)
-ginp.sequence['sponrad'].doSpread = 1 # (isrsig in gen2)
+ginp.sequence["sponrad"].seed = 123123  # for quantum fluctuation
+ginp.sequence["sponrad"].doLoss = 1  # (isravg in gen2)
+ginp.sequence["sponrad"].doSpread = 1  # (isrsig in gen2)
 
-ginp.sequence['write'].field = ginp.sequence['setup'].rootname
-ginp.sequence['write'].beam = ginp.sequence['setup'].rootname
+ginp.sequence["write"].field = ginp.sequence["setup"].rootname
+ginp.sequence["write"].beam = ginp.sequence["setup"].rootname
 
-ginp.sequence['track'].zstop = 75
-ginp.sequence['track'].output_step = 3 # populate out file every nth integration step (iphsty in gen2)
-ginp.sequence['track'].field_dump_step = 0
-ginp.sequence['track'].beam_dump_step = 0
-ginp.sequence['track'].sort_step = 0
+ginp.sequence["track"].zstop = 75
+ginp.sequence[
+    "track"
+].output_step = 3  # populate out file every nth integration step (iphsty in gen2)
+ginp.sequence["track"].field_dump_step = 0
+ginp.sequence["track"].beam_dump_step = 0
+ginp.sequence["track"].sort_step = 0
 
-ginp.attachments.lat = {'SASE1': sase_lat}
-sase_sim = Genesis4Simulation(ginp,
-                              exp_dir=os.path.join(sim_directory, 'Example-SASE1'),
-                              return_out=1, # after the simulation reads and returns output file as Genesis4Output object
-                              cleanup_afterwards=0, # deletes simulation files after the simulation (makes sence when return_out=1)
-                              exec_script_path = __file__,
-                              zstop=50)
+ginp.attachments.lat = {"SASE1": sase_lat}
+sase_sim = Genesis4Simulation(
+    ginp,
+    exp_dir=os.path.join(sim_directory, "Example-SASE1"),
+    return_out=1,  # after the simulation reads and returns output file as Genesis4Output object
+    cleanup_afterwards=0,  # deletes simulation files after the simulation (makes sence when return_out=1)
+    exec_script_path=__file__,
+    zstop=50,
+)
 
 # Genesis4 simulation is usually started simply using
 sase_gout = sase_sim.run()
@@ -111,4 +135,6 @@ sase_gout = sase_sim.run()
 # plot_gen4_out_z(sase_gout, z=0, showfig=0, savefig=1)
 # plot_gen4_out_e(sase_gout, showfig=0, savefig=1)
 # plot_gen4_out_ph(sase_gout, showfig=0, savefig=1)
-plot_gen4_out_all(sase_gout.filePath.replace('out.h5','*'), showfig=0, savefig=1) #plots reasonable ammount of output from .out, .fld and .par
+plot_gen4_out_all(
+    sase_gout.filePath.replace("out.h5", "*"), showfig=0, savefig=1
+)  # plots reasonable ammount of output from .out, .fld and .par

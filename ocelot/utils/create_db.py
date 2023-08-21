@@ -1,7 +1,8 @@
+import os
 import sqlite3
-import os, sys
+import sys
 
-db = sqlite3.connect('flash.db')
+db = sqlite3.connect("flash.db")
 cursor = db.cursor()
 
 cursor.execute("drop table if exists TUNINGS")
@@ -41,7 +42,6 @@ sql = """CREATE TABLE MACHINE_STATE (
          PAR_VALUE FLOAT)"""
 
 cursor.execute(sql)
-
 
 
 db.close()

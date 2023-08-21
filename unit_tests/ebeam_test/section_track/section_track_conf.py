@@ -1,23 +1,23 @@
 """Test parameters description file"""
 
-import pytest
+import time
+
 import numpy as np
+import pytest
+from accelerator.s2e_sections.sections import *
 
 from ocelot import *
-from accelerator.s2e_sections.sections import *
 from ocelot.utils.section_track import *
-import time
 
 data_dir = "./unit_tests/ebeam_test/section_track/data"
 
 
-
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def all_sections():
     return [A1, AH1, LH, DL, BC0, L1, BC1]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def tws0():
     tws = Twiss()
     tws.E = 0.005
@@ -28,15 +28,14 @@ def tws0():
     return tws
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def section_lat(all_sections, tws0):
     lats = SectionLattice(sequence=all_sections, tws0=tws0, data_dir=data_dir)
     return lats
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def p_array():
-
     np.random.seed(11)
     n = 20000
     # generate beam file
@@ -52,12 +51,12 @@ def p_array():
 
     # covariance matrix for [tau, p] for beam compression in BC
     cov_t_p = [[1.30190131e-06, 2.00819771e-05], [2.00819771e-05, 3.09815718e-04]]
-    long_dist = np.random.multivariate_normal((0,0), cov_t_p, n)
+    long_dist = np.random.multivariate_normal((0, 0), cov_t_p, n)
     tau = long_dist[:, 0]
     dp = long_dist[:, 1]
 
     p_array = ParticleArray(n=n)
-    p_array.E = 0.130 # GeV
+    p_array.E = 0.130  # GeV
     p_array.rparticles[0] = x
     p_array.rparticles[1] = px
     p_array.rparticles[2] = y

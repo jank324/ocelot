@@ -7,16 +7,18 @@ Examples of converting synchrotron radiation (ocelot.rad.screen.Screen object) t
 """
 __author__ = "Mykola Veremchuk"
 
+import matplotlib
 import numpy as np
+
+from ocelot.cpbd.beam import Beam
 from ocelot.cpbd.elements import Undulator
 from ocelot.cpbd.magnetic_lattice import MagneticLattice
-from ocelot.cpbd.beam import Beam
-from ocelot.rad.screen import Screen
-from ocelot.rad.radiation_py import calculate_radiation
-from ocelot.optics.wave import dfl_waistscan, screen2dfl, RadiationField
 from ocelot.gui.dfl_plot import plot_dfl, plot_dfl_waistscan
-import matplotlib
-matplotlib.use('qtagg')
+from ocelot.optics.wave import RadiationField, dfl_waistscan, screen2dfl
+from ocelot.rad.radiation_py import calculate_radiation
+from ocelot.rad.screen import Screen
+
+matplotlib.use("qtagg")
 # %%
 # generating 2D synchrotron radiation (it will take about 1-3 minute)
 # LOOK TUTORIAL ABOUT GENERATING SYNCHROTRON RADIATION IN demos/ipython_tutorials/9_synchrotron_radiation.ipynb
@@ -41,22 +43,19 @@ screen_2d = calculate_radiation(lat, screen_2d, beam)
 
 # %%
 # converting Screen to RadiationField (function generates new RadiationField() without changing Screen)
-dfl_2d = screen2dfl(screen_2d,          # Screen object, electric field of which will be used to generate RadiationField
-                    polarization='x')   # polarization for conversion to RadiationField ('x' or 'y')
-plot_dfl(dfl_2d,
-         domains='fs',
-         fig_name='dfl_2d generated from screen_2d')
+dfl_2d = screen2dfl(
+    screen_2d,  # Screen object, electric field of which will be used to generate RadiationField
+    polarization="x",
+)  # polarization for conversion to RadiationField ('x' or 'y')
+plot_dfl(dfl_2d, domains="fs", fig_name="dfl_2d generated from screen_2d")
 
 # scanning for waist position
 wfs = dfl_waistscan(dfl_2d, np.linspace(-80, -20, 200))
-plot_dfl_waistscan(wfs, fig_name='waist scan of dfl_2d')
+plot_dfl_waistscan(wfs, fig_name="waist scan of dfl_2d")
 
 # half analytical propagation to waist point
-dfl_2d.prop_m(-48.25,
-              m=0.05)
-plot_dfl(dfl_2d,
-         domains='fs',
-         fig_name='dfl_2d at waist position')
+dfl_2d.prop_m(-48.25, m=0.05)
+plot_dfl(dfl_2d, domains="fs", fig_name="dfl_2d at waist position")
 
 # %%
 # generating 3D synchrotron radiation (it will take up to 5 minute)
@@ -77,26 +76,32 @@ screen_3d = calculate_radiation(lat, screen_3d, beam)
 
 # %%
 # converting Screen to RadiationField (function generates new RadiationField() without changing Screen)
-dfl_3d = screen2dfl(screen_3d,          # Screen object, electric field of which will be used to generate RadiationField
-                    polarization='x')   # polarization for conversion to RadiationField ('x' or 'y')
-plot_dfl(dfl_3d,
-         domains='fs',
-         fig_name='dfl_3d generated from screen_3d in frequency-space domains',
-         slice_xy=True)    # bool type variable, if True, slices will be plotted; if False, projections will be plotted
-plot_dfl(dfl_3d,
-         domains='ts',
-         fig_name='dfl_3d generated from screen_3d in time-space domains',
-         slice_xy=False)    # bool type variable, if True, slices will be plotted; if False, projections will be plotted
+dfl_3d = screen2dfl(
+    screen_3d,  # Screen object, electric field of which will be used to generate RadiationField
+    polarization="x",
+)  # polarization for conversion to RadiationField ('x' or 'y')
+plot_dfl(
+    dfl_3d,
+    domains="fs",
+    fig_name="dfl_3d generated from screen_3d in frequency-space domains",
+    slice_xy=True,
+)  # bool type variable, if True, slices will be plotted; if False, projections will be plotted
+plot_dfl(
+    dfl_3d,
+    domains="ts",
+    fig_name="dfl_3d generated from screen_3d in time-space domains",
+    slice_xy=False,
+)  # bool type variable, if True, slices will be plotted; if False, projections will be plotted
 
 # scanning for waist position
-wfs = dfl_waistscan(dfl_3d,
-                    z_pos=np.linspace(-80, -20, 200))
-plot_dfl_waistscan(wfs, fig_name='waist scan of dfl_3d')
+wfs = dfl_waistscan(dfl_3d, z_pos=np.linspace(-80, -20, 200))
+plot_dfl_waistscan(wfs, fig_name="waist scan of dfl_3d")
 
 # half analytical propagation to waist point
-dfl_3d.prop_m(-48.25,
-              m=0.05)
-plot_dfl(dfl_3d,
-         domains='fs',
-         fig_name='dfl_3d at waist position in frequency-space domains',
-         slice_xy=False)     # bool type variable, if True, slices will be plotted; if False, projections will be plotted
+dfl_3d.prop_m(-48.25, m=0.05)
+plot_dfl(
+    dfl_3d,
+    domains="fs",
+    fig_name="dfl_3d at waist position in frequency-space domains",
+    slice_xy=False,
+)  # bool type variable, if True, slices will be plotted; if False, projections will be plotted

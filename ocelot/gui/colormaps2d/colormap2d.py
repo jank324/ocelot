@@ -6,13 +6,23 @@ https://github.com/MMesch/cmap_builder
 """
 
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.ndimage.interpolation import map_coordinates
 
-def data2d_to_rgb(data, cmap2d='brightwheel', huenorm=None, huevmin=None,
-                  huevmax=None, fill_value=(1., 1., 1.),
-                  lightnorm=None, lightvmin=None, lightvmax=None):
+
+def data2d_to_rgb(
+    data,
+    cmap2d="brightwheel",
+    huenorm=None,
+    huevmin=None,
+    huevmax=None,
+    fill_value=(1.0, 1.0, 1.0),
+    lightnorm=None,
+    lightvmin=None,
+    lightvmax=None,
+):
     """
     Map 2 parameter 2D data array to rgb values.
 
@@ -45,7 +55,7 @@ def data2d_to_rgb(data, cmap2d='brightwheel', huenorm=None, huevmin=None,
     data_dim, nrows, ncols = data.shape
     idata = np.copy(data)
     mask = np.all(np.isfinite(idata), axis=0)
-    idata[:, ~mask] = 0.
+    idata[:, ~mask] = 0.0
 
     # normalize data if required
     if huenorm is None:
@@ -76,9 +86,9 @@ def data2d_to_rgb(data, cmap2d='brightwheel', huenorm=None, huevmin=None,
     idata[1] *= cmap2d.shape[1]
 
     # now search for the index in the colormap for each color independently
-    r = map_coordinates(cmap2d[:, :, 0], idata, order=1, mode='nearest')
-    g = map_coordinates(cmap2d[:, :, 1], idata, order=1, mode='nearest')
-    b = map_coordinates(cmap2d[:, :, 2], idata, order=1, mode='nearest')
+    r = map_coordinates(cmap2d[:, :, 0], idata, order=1, mode="nearest")
+    g = map_coordinates(cmap2d[:, :, 1], idata, order=1, mode="nearest")
+    b = map_coordinates(cmap2d[:, :, 2], idata, order=1, mode="nearest")
 
     # assemble the values in a [3, nrows, ncols] array and transpose it
     # to [ncols, nrows, 3] which can be used by matplotlib imshow
@@ -88,9 +98,18 @@ def data2d_to_rgb(data, cmap2d='brightwheel', huenorm=None, huevmin=None,
     return rgb
 
 
-def imshow2d(data, ax=None, cmap2d='brightwheel', huenorm=None, huevmin=None,
-             huevmax=None, lightnorm=None, lightvmin=None, lightvmax=None,
-             **kwargs):
+def imshow2d(
+    data,
+    ax=None,
+    cmap2d="brightwheel",
+    huenorm=None,
+    huevmin=None,
+    huevmax=None,
+    lightnorm=None,
+    lightvmin=None,
+    lightvmax=None,
+    **kwargs
+):
     """
     Plot 2 parameter 2D data array to current axis.
 
@@ -119,10 +138,16 @@ def imshow2d(data, ax=None, cmap2d='brightwheel', huenorm=None, huevmin=None,
     """
     if ax is None:
         ax = plt.gca()
-    rgb_data = data2d_to_rgb(data, cmap2d=cmap2d,
-                             huenorm=huenorm, huevmin=huevmin,
-                             huevmax=huevmax, lightnorm=lightnorm,
-                             lightvmin=lightvmin, lightvmax=lightvmax)
+    rgb_data = data2d_to_rgb(
+        data,
+        cmap2d=cmap2d,
+        huenorm=huenorm,
+        huevmin=huevmin,
+        huevmax=huevmax,
+        lightnorm=lightnorm,
+        lightvmin=lightvmin,
+        lightvmax=lightvmax,
+    )
     im = ax.imshow(rgb_data, **kwargs)
     return im
 
@@ -136,7 +161,7 @@ def get_cmap2d(name):
                  'smoothwheel', 'wheel'
     """
     package_dir = os.path.dirname(__file__)
-    cmap_file = name + '.npy'
+    cmap_file = name + ".npy"
     cmap_path = os.path.join(package_dir, cmap_file)
     cmap2d = np.load(cmap_path)
     return cmap2d

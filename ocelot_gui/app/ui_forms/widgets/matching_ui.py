@@ -8,11 +8,14 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form_Matching(object):
     def setupUi(self, Form_Matching):
         Form_Matching.setObjectName("Form_Matching")
         Form_Matching.resize(800, 500)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Form_Matching.sizePolicy().hasHeightForWidth())
@@ -30,10 +33,14 @@ class Ui_Form_Matching(object):
         self.horizontalLayout_3.setSpacing(5)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.periodic_solution = QtWidgets.QCheckBox(Form_Matching)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.periodic_solution.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.periodic_solution.sizePolicy().hasHeightForWidth()
+        )
         self.periodic_solution.setSizePolicy(sizePolicy)
         self.periodic_solution.setMinimumSize(QtCore.QSize(140, 0))
         self.periodic_solution.setMaximumSize(QtCore.QSize(140, 16777215))
@@ -43,14 +50,18 @@ class Ui_Form_Matching(object):
         self.verticalLayout_7.setObjectName("verticalLayout_7")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem = QtWidgets.QSpacerItem(30, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            30, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem)
         self.label_23 = QtWidgets.QLabel(Form_Matching)
         self.label_23.setMaximumSize(QtCore.QSize(16777215, 15))
         self.label_23.setAlignment(QtCore.Qt.AlignCenter)
         self.label_23.setObjectName("label_23")
         self.horizontalLayout.addWidget(self.label_23)
-        spacerItem1 = QtWidgets.QSpacerItem(45, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            45, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem1)
         self.verticalLayout_7.addLayout(self.horizontalLayout)
         self.gridLayout_4 = QtWidgets.QGridLayout()
@@ -78,15 +89,21 @@ class Ui_Form_Matching(object):
         self.lineEdit_beta_y_in.setObjectName("lineEdit_beta_y_in")
         self.gridLayout_4.addWidget(self.lineEdit_beta_y_in, 1, 2, 1, 1)
         self.label_7 = QtWidgets.QLabel(Form_Matching)
-        self.label_7.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_7.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_7.setObjectName("label_7")
         self.gridLayout_4.addWidget(self.label_7, 2, 0, 1, 1)
         self.label_5 = QtWidgets.QLabel(Form_Matching)
-        self.label_5.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_5.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_5.setObjectName("label_5")
         self.gridLayout_4.addWidget(self.label_5, 0, 0, 1, 1)
         self.label_9 = QtWidgets.QLabel(Form_Matching)
-        self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_9.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_9.setObjectName("label_9")
         self.gridLayout_4.addWidget(self.label_9, 4, 0, 1, 1)
         self.comboBox_beta_y_in = QtWidgets.QComboBox(Form_Matching)
@@ -108,7 +125,9 @@ class Ui_Form_Matching(object):
         self.comboBox_alpha_y_in.addItem("")
         self.gridLayout_4.addWidget(self.comboBox_alpha_y_in, 3, 1, 1, 1)
         self.label_6 = QtWidgets.QLabel(Form_Matching)
-        self.label_6.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_6.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_6.setObjectName("label_6")
         self.gridLayout_4.addWidget(self.label_6, 1, 0, 1, 1)
         self.comboBox_alpha_x_in = QtWidgets.QComboBox(Form_Matching)
@@ -121,7 +140,9 @@ class Ui_Form_Matching(object):
         self.comboBox_alpha_x_in.addItem("")
         self.gridLayout_4.addWidget(self.comboBox_alpha_x_in, 2, 1, 1, 1)
         self.label_8 = QtWidgets.QLabel(Form_Matching)
-        self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_8.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_8.setObjectName("label_8")
         self.gridLayout_4.addWidget(self.label_8, 3, 0, 1, 1)
         self.lineEdit_alpha_y_in = QtWidgets.QLineEdit(Form_Matching)
@@ -142,7 +163,9 @@ class Ui_Form_Matching(object):
         self.lineEdit_Dx_in.setObjectName("lineEdit_Dx_in")
         self.gridLayout_4.addWidget(self.lineEdit_Dx_in, 4, 2, 1, 1)
         self.label_10 = QtWidgets.QLabel(Form_Matching)
-        self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_10.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_10.setObjectName("label_10")
         self.gridLayout_4.addWidget(self.label_10, 5, 0, 1, 1)
         self.comboBox_Dxp_in = QtWidgets.QComboBox(Form_Matching)
@@ -164,14 +187,18 @@ class Ui_Form_Matching(object):
         self.verticalLayout_8.setObjectName("verticalLayout_8")
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        spacerItem2 = QtWidgets.QSpacerItem(30, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            30, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_4.addItem(spacerItem2)
         self.label_24 = QtWidgets.QLabel(Form_Matching)
         self.label_24.setMaximumSize(QtCore.QSize(16777215, 15))
         self.label_24.setAlignment(QtCore.Qt.AlignCenter)
         self.label_24.setObjectName("label_24")
         self.horizontalLayout_4.addWidget(self.label_24)
-        spacerItem3 = QtWidgets.QSpacerItem(45, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            45, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_4.addItem(spacerItem3)
         self.verticalLayout_8.addLayout(self.horizontalLayout_4)
         self.gridLayout_5 = QtWidgets.QGridLayout()
@@ -187,7 +214,9 @@ class Ui_Form_Matching(object):
         self.comboBox_beta_x_out.addItem("")
         self.gridLayout_5.addWidget(self.comboBox_beta_x_out, 0, 1, 1, 1)
         self.label_13 = QtWidgets.QLabel(Form_Matching)
-        self.label_13.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_13.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_13.setObjectName("label_13")
         self.gridLayout_5.addWidget(self.label_13, 3, 0, 1, 1)
         self.comboBox_alpha_x_out = QtWidgets.QComboBox(Form_Matching)
@@ -204,11 +233,15 @@ class Ui_Form_Matching(object):
         self.lineEdit_alpha_x_out.setObjectName("lineEdit_alpha_x_out")
         self.gridLayout_5.addWidget(self.lineEdit_alpha_x_out, 3, 2, 1, 1)
         self.label_11 = QtWidgets.QLabel(Form_Matching)
-        self.label_11.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_11.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_11.setObjectName("label_11")
         self.gridLayout_5.addWidget(self.label_11, 0, 0, 1, 1)
         self.label_12 = QtWidgets.QLabel(Form_Matching)
-        self.label_12.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_12.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_12.setObjectName("label_12")
         self.gridLayout_5.addWidget(self.label_12, 2, 0, 1, 1)
         self.comboBox_beta_y_out = QtWidgets.QComboBox(Form_Matching)
@@ -234,7 +267,9 @@ class Ui_Form_Matching(object):
         self.comboBox_Dx_out.addItem("")
         self.gridLayout_5.addWidget(self.comboBox_Dx_out, 6, 1, 1, 1)
         self.label_15 = QtWidgets.QLabel(Form_Matching)
-        self.label_15.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_15.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_15.setObjectName("label_15")
         self.gridLayout_5.addWidget(self.label_15, 6, 0, 1, 1)
         self.lineEdit_beta_y_out = QtWidgets.QLineEdit(Form_Matching)
@@ -242,7 +277,9 @@ class Ui_Form_Matching(object):
         self.lineEdit_beta_y_out.setObjectName("lineEdit_beta_y_out")
         self.gridLayout_5.addWidget(self.lineEdit_beta_y_out, 2, 2, 1, 1)
         self.label_14 = QtWidgets.QLabel(Form_Matching)
-        self.label_14.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_14.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_14.setObjectName("label_14")
         self.gridLayout_5.addWidget(self.label_14, 5, 0, 1, 1)
         self.lineEdit_alpha_y_out = QtWidgets.QLineEdit(Form_Matching)
@@ -263,7 +300,9 @@ class Ui_Form_Matching(object):
         self.lineEdit_Dx_out.setObjectName("lineEdit_Dx_out")
         self.gridLayout_5.addWidget(self.lineEdit_Dx_out, 6, 2, 1, 1)
         self.label_16 = QtWidgets.QLabel(Form_Matching)
-        self.label_16.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_16.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_16.setObjectName("label_16")
         self.gridLayout_5.addWidget(self.label_16, 7, 0, 1, 1)
         self.lineEdit_Dxp_out = QtWidgets.QLineEdit(Form_Matching)
@@ -285,14 +324,18 @@ class Ui_Form_Matching(object):
         self.verticalLayout_9.setObjectName("verticalLayout_9")
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
-        spacerItem4 = QtWidgets.QSpacerItem(30, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem4 = QtWidgets.QSpacerItem(
+            30, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_5.addItem(spacerItem4)
         self.label_25 = QtWidgets.QLabel(Form_Matching)
         self.label_25.setMaximumSize(QtCore.QSize(16777215, 15))
         self.label_25.setAlignment(QtCore.Qt.AlignCenter)
         self.label_25.setObjectName("label_25")
         self.horizontalLayout_5.addWidget(self.label_25)
-        spacerItem5 = QtWidgets.QSpacerItem(45, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem5 = QtWidgets.QSpacerItem(
+            45, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_5.addItem(spacerItem5)
         self.verticalLayout_9.addLayout(self.horizontalLayout_5)
         self.gridLayout_6 = QtWidgets.QGridLayout()
@@ -307,7 +350,9 @@ class Ui_Form_Matching(object):
         self.comboBox_beta_x_all.addItem("")
         self.gridLayout_6.addWidget(self.comboBox_beta_x_all, 0, 1, 1, 1)
         self.label_18 = QtWidgets.QLabel(Form_Matching)
-        self.label_18.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_18.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_18.setObjectName("label_18")
         self.gridLayout_6.addWidget(self.label_18, 1, 0, 1, 1)
         self.comboBox_alpha_y_all = QtWidgets.QComboBox(Form_Matching)
@@ -323,15 +368,21 @@ class Ui_Form_Matching(object):
         self.lineEdit_beta_x_all.setObjectName("lineEdit_beta_x_all")
         self.gridLayout_6.addWidget(self.lineEdit_beta_x_all, 0, 2, 1, 1)
         self.label_17 = QtWidgets.QLabel(Form_Matching)
-        self.label_17.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_17.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_17.setObjectName("label_17")
         self.gridLayout_6.addWidget(self.label_17, 0, 0, 1, 1)
         self.label_19 = QtWidgets.QLabel(Form_Matching)
-        self.label_19.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_19.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_19.setObjectName("label_19")
         self.gridLayout_6.addWidget(self.label_19, 2, 0, 1, 1)
         self.label_20 = QtWidgets.QLabel(Form_Matching)
-        self.label_20.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_20.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_20.setObjectName("label_20")
         self.gridLayout_6.addWidget(self.label_20, 3, 0, 1, 1)
         self.lineEdit_alpha_x_all = QtWidgets.QLineEdit(Form_Matching)
@@ -371,7 +422,9 @@ class Ui_Form_Matching(object):
         self.comboBox_beta_y_all.addItem("")
         self.gridLayout_6.addWidget(self.comboBox_beta_y_all, 1, 1, 1, 1)
         self.label_21 = QtWidgets.QLabel(Form_Matching)
-        self.label_21.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_21.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_21.setObjectName("label_21")
         self.gridLayout_6.addWidget(self.label_21, 4, 0, 1, 1)
         self.lineEdit_Dx_all = QtWidgets.QLineEdit(Form_Matching)
@@ -379,7 +432,9 @@ class Ui_Form_Matching(object):
         self.lineEdit_Dx_all.setObjectName("lineEdit_Dx_all")
         self.gridLayout_6.addWidget(self.lineEdit_Dx_all, 4, 2, 1, 1)
         self.label_22 = QtWidgets.QLabel(Form_Matching)
-        self.label_22.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_22.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label_22.setObjectName("label_22")
         self.gridLayout_6.addWidget(self.label_22, 5, 0, 1, 1)
         self.lineEdit_Dxp_all = QtWidgets.QLineEdit(Form_Matching)
@@ -401,7 +456,9 @@ class Ui_Form_Matching(object):
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout_3.addLayout(self.gridLayout)
         self.verticalLayout_4.addLayout(self.horizontalLayout_3)
-        spacerItem6 = QtWidgets.QSpacerItem(20, 80, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem6 = QtWidgets.QSpacerItem(
+            20, 80, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_4.addItem(spacerItem6)
         self.btn2 = QtWidgets.QPushButton(Form_Matching)
         self.btn2.setObjectName("btn2")
@@ -551,10 +608,10 @@ class Ui_Form_Matching(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Form_Matching = QtWidgets.QWidget()
     ui = Ui_Form_Matching()
     ui.setupUi(Form_Matching)
     Form_Matching.show()
     sys.exit(app.exec_())
-

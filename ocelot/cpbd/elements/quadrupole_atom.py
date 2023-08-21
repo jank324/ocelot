@@ -12,7 +12,7 @@ class QuadrupoleAtom(Magnet):
     tilt - tilt of lens in [rad].
     """
 
-    def __init__(self, l=0., k1=0, k2=0., tilt=0., eid=None):
+    def __init__(self, l=0.0, k1=0, k2=0.0, tilt=0.0, eid=None):
         # Element.__init__(self, eid)
         super().__init__(eid=eid)
         self.l = l
@@ -21,10 +21,10 @@ class QuadrupoleAtom(Magnet):
         self.tilt = tilt
 
     def __str__(self):
-        s = 'Quadrupole('
-        s += 'l=%7.5f, ' % self.l if self.l != 0. else ""
-        s += 'k1=%8.6e, ' % self.k1 if np.abs(self.k1) > 1e-15 else ""
-        s += 'k2=%8.6e, ' % self.k2 if np.abs(self.k2) > 1e-15 else ""
-        s += 'tilt=%8.6e, ' % self.tilt if np.abs(self.tilt) > 1e-15 else ""
+        s = "Quadrupole("
+        s += "l=%7.5f, " % self.l if self.l != 0.0 else ""
+        s += "k1=%8.6e, " % self.k1 if np.abs(self.k1) > 1e-15 else ""
+        s += "k2=%8.6e, " % self.k2 if np.abs(self.k2) > 1e-15 else ""
+        s += "tilt=%8.6e, " % self.tilt if np.abs(self.tilt) > 1e-15 else ""
         s += 'eid="' + str(self.id) + '")' if self.id is not None else ")"
         return s

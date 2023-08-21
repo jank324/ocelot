@@ -4,43 +4,52 @@ from copy import deepcopy
 import numpy as np
 from scipy.optimize import *
 
+from ocelot.cpbd.beam import Particle, get_envelope
 from ocelot.cpbd.beam_params import radiation_integrals
-from ocelot.cpbd.magnetic_lattice import MagneticLattice
-from ocelot.cpbd.beam import Particle
 from ocelot.cpbd.elements import *
-from ocelot.cpbd.beam import get_envelope
-from ocelot.cpbd.track import track
-from ocelot.cpbd.optics import lattice_transfer_map, twiss, periodic_twiss, Twiss
 from ocelot.cpbd.elements.optic_element import OpticElement
+from ocelot.cpbd.magnetic_lattice import MagneticLattice
+from ocelot.cpbd.optics import Twiss, lattice_transfer_map, periodic_twiss, twiss
 from ocelot.cpbd.tm_utils import SecondOrderMult
+from ocelot.cpbd.track import track
 
 
 def weights_default(val):
-    if val == 'periodic':
+    if val == "periodic":
         return 10000001.0
-    if val == 'total_len':
+    if val == "total_len":
         return 10000001.0
-    if val in ['Dx', 'Dy']:
+    if val in ["Dx", "Dy"]:
         return 10000002.0
-    if val in ['Dxp', 'Dyp']:
+    if val in ["Dxp", "Dyp"]:
         return 10000003.0
-    if val == 'tau':
+    if val == "tau":
         return 10000004.0
-    if val == 'i5':
-        return 1.e14
-    if val == 'negative_length':
+    if val == "i5":
+        return 1.0e14
+    if val == "negative_length":
         return 1.5e6
-    if val in ['alpha_x', 'alpha_y']:
+    if val in ["alpha_x", "alpha_y"]:
         return 100007.0
-    if val in ['mux', 'muy']:
+    if val in ["mux", "muy"]:
         return 10000006.0
-    if val in ['beta_x', 'beta_y']:
+    if val in ["beta_x", "beta_y"]:
         return 100007.0
     return 0.0001
 
 
-def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', weights=weights_default,
-          vary_bend_angle=False, min_i5=False):
+def match(
+    lat,
+    constr,
+    vars,
+    tw,
+    verbose=True,
+    max_iter=1000,
+    method="simplex",
+    weights=weights_default,
+    vary_bend_angle=False,
+    min_i5=False,
+):
     """
     Function to match twiss parameters
 
@@ -90,18 +99,17 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
     # tw = deepcopy(tw0)
 
     def errf(x):
-
         tw_loc = deepcopy(tw)
         tw0 = deepcopy(tw)
 
-        '''
+        """
         parameter to be varied is determined by variable class
-        '''
+        """
         for i in range(len(vars)):
             if isinstance(vars[i], Drift):
                 if x[i] < 0:
                     # print('negative length in match')
-                    return weights('negative_length')
+                    return weights("negative_length")
 
                 vars[i].l = x[i]
 
@@ -117,10 +125,11 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
                     vars[i].k1 = x[i]
             if isinstance(vars[i], list):
                 if isinstance(vars[i][0], Twiss) and isinstance(vars[i][1], str):
-
                     k = vars[i][1]
                     tw_loc.__dict__[k] = x[i]
-            if isinstance(vars[i], tuple):  # all quads strength in tuple varied simultaneously
+            if isinstance(
+                vars[i], tuple
+            ):  # all quads strength in tuple varied simultaneously
                 for v in vars[i]:
                     v.k1 = x[i]
 
@@ -131,19 +140,19 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
                 tw0 = deepcopy(tw_loc)
                 if tw_loc is None:
                     print("########")
-                    return weights('periodic')
+                    return weights("periodic")
 
         # save reference points where equality is asked
 
         ref_hsh = {}  # penalties on two-point inequalities
         for e in constr.keys():
-            if e == 'periodic':
+            if e == "periodic":
                 continue
-            if e == 'total_len':
+            if e == "total_len":
                 continue
             for k in constr[e].keys():
                 if isinstance(constr[e][k], list):
-                    if constr[e][k][0] == '->':
+                    if constr[e][k][0] == "->":
                         # print 'creating reference to', constr[e][k][1].id
                         ref_hsh[constr[e][k][1]] = {k: 0.0}
         # evaluating global and point penalties
@@ -154,79 +163,111 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
             for tm in e.first_order_tms:
                 tw_loc = tm * tw_loc
 
-                if 'global' in constr.keys():
-                    for c in constr['global'].keys():
-                        if isinstance(constr['global'][c], list):
-                            v1 = constr['global'][c][1]
-                            if constr['global'][c][0] == '<':
+                if "global" in constr.keys():
+                    for c in constr["global"].keys():
+                        if isinstance(constr["global"][c], list):
+                            v1 = constr["global"][c][1]
+                            if constr["global"][c][0] == "<":
                                 if tw_loc.__dict__[c] > v1:
-                                    err = err + weights(k) * (tw_loc.__dict__[c] - v1) ** 2
-                            if constr['global'][c][0] == '>':
+                                    err = (
+                                        err
+                                        + weights(k) * (tw_loc.__dict__[c] - v1) ** 2
+                                    )
+                            if constr["global"][c][0] == ">":
                                 if tw_loc.__dict__[c] < v1:
-                                    err = err + weights(k) * (tw_loc.__dict__[c] - v1) ** 2
-                if 'delta' in constr.keys():
-                    if e in constr['delta'].keys():
-                        tw_k = constr['delta'][e][0]
-                        constr['delta'][e][1] = tw_loc.__dict__[tw_k]
+                                    err = (
+                                        err
+                                        + weights(k) * (tw_loc.__dict__[c] - v1) ** 2
+                                    )
+                if "delta" in constr.keys():
+                    if e in constr["delta"].keys():
+                        tw_k = constr["delta"][e][0]
+                        constr["delta"][e][1] = tw_loc.__dict__[tw_k]
                 if e in ref_hsh.keys():
                     ref_hsh[e] = deepcopy(tw_loc)
 
                 if e in constr.keys():
-
                     for k in constr[e].keys():
                         if isinstance(constr[e][k], list):
                             v1 = constr[e][k][1]
 
-                            if constr[e][k][0] == '<':
+                            if constr[e][k][0] == "<":
                                 if tw_loc.__dict__[k] > v1:
-                                    err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
-                            if constr[e][k][0] == '>':
+                                    err = (
+                                        err
+                                        + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
+                                    )
+                            if constr[e][k][0] == ">":
                                 if tw_loc.__dict__[k] < v1:
-                                    err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
-                            if constr[e][k][0] == 'a<':
+                                    err = (
+                                        err
+                                        + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
+                                    )
+                            if constr[e][k][0] == "a<":
                                 if np.abs(tw_loc.__dict__[k]) > v1:
-                                    err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
-                            if constr[e][k][0] == 'a>':
+                                    err = (
+                                        err
+                                        + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
+                                    )
+                            if constr[e][k][0] == "a>":
                                 if np.abs(tw_loc.__dict__[k]) < v1:
-                                    err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
+                                    err = (
+                                        err
+                                        + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
+                                    )
 
-                            if constr[e][k][0] == '->':
+                            if constr[e][k][0] == "->":
                                 try:
                                     if len(constr[e][k]) > 2:
                                         dv1 = float(constr[e][k][2])
                                     else:
                                         dv1 = 0.0
-                                    err += (tw_loc.__dict__[k] - (ref_hsh[v1].__dict__[k] + dv1)) ** 2
+                                    err += (
+                                        tw_loc.__dict__[k]
+                                        - (ref_hsh[v1].__dict__[k] + dv1)
+                                    ) ** 2
 
                                     if tw_loc.__dict__[k] < v1:
                                         err = err + (tw_loc.__dict__[k] - v1) ** 2
                                 except:
-                                    print('constraint error: rval should precede lval in lattice')
+                                    print(
+                                        "constraint error: rval should precede lval in lattice"
+                                    )
 
                             if tw_loc.__dict__[k] < 0:
                                 err += (tw_loc.__dict__[k] - v1) ** 2
                         elif isinstance(constr[e][k], str):
                             pass
                         else:
-                            err = err + weights(k) * (constr[e][k] - tw_loc.__dict__[k]) ** 2
+                            err = (
+                                err
+                                + weights(k) * (constr[e][k] - tw_loc.__dict__[k]) ** 2
+                            )
         if "total_len" in constr.keys():
             total_len = constr["periodic"]
-            err = err + weights('total_len') * (tw_loc.s - total_len) ** 2
+            err = err + weights("total_len") * (tw_loc.s - total_len) ** 2
 
-        if 'delta' in constr.keys():
-            delta_dict = constr['delta']
+        if "delta" in constr.keys():
+            delta_dict = constr["delta"]
             elems = []
             for e in delta_dict.keys():
                 if isinstance(e, OpticElement):
                     elems.append(e)
-            delta_err = delta_dict["weight"] * (delta_dict[elems[0]][1] - delta_dict[elems[1]][1] - delta_dict["val"])**2
+            delta_err = (
+                delta_dict["weight"]
+                * (
+                    delta_dict[elems[0]][1]
+                    - delta_dict[elems[1]][1]
+                    - delta_dict["val"]
+                )
+                ** 2
+            )
             err = err + delta_err
 
         if min_i5:
-            ''' evaluating integral parameters
-            '''
+            """evaluating integral parameters"""
             I1, I2, I3, I4, I5 = radiation_integrals(lat, tw0, nsuperperiod=1)
-            err += I5 * weights('i5')
+            err += I5 * weights("i5")
 
             Je = 2 + I4 / I2
             Jx = 1 - I4 / I2
@@ -239,12 +280,12 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
         # err += ( c1**2 + c2**2) * 1.e-6
 
         if verbose:
-            print('iteration error:', err)
+            print("iteration error:", err)
         return err
 
-    '''
+    """
     list of arguments determined based on the variable class
-    '''
+    """
     x = [0.0] * len(vars)
     for i in range(len(vars)):
         if vars[i].__class__ == list:
@@ -269,16 +310,16 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
                 x[i] = vars[i].k1
 
     print("initial value: x = ", x)
-    if method == 'simplex':
+    if method == "simplex":
         res = fmin(errf, x, xtol=1e-5, maxiter=max_iter, maxfun=max_iter)
-    if method == 'cg':
-        res = fmin_cg(errf, x, gtol=1.e-5, epsilon=1.e-5, maxiter=max_iter)
-    if method == 'bfgs':
-        res = fmin_bfgs(errf, x, gtol=1.e-5, epsilon=1.e-5, maxiter=max_iter)
+    if method == "cg":
+        res = fmin_cg(errf, x, gtol=1.0e-5, epsilon=1.0e-5, maxiter=max_iter)
+    if method == "bfgs":
+        res = fmin_bfgs(errf, x, gtol=1.0e-5, epsilon=1.0e-5, maxiter=max_iter)
 
-    '''
+    """
     if initial twiss was varied set the twiss argument object to resulting value
-    '''
+    """
     for i in range(len(vars)):
         if vars[i].__class__ == list:
             if vars[i][0].__class__ == Twiss and vars[i][1].__class__ == str:
@@ -288,31 +329,43 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
 
 
 def weights_default(val):
-    if val == 'periodic':
+    if val == "periodic":
         return 1
-    if val == 'total_len':
+    if val == "total_len":
         return 1
-    if val == 'Dx':
+    if val == "Dx":
         return 1
-    if val == 'Dxp':
+    if val == "Dxp":
         return 1
-    if val == 'tau':
+    if val == "tau":
         return 1
-    if val == 'i5':
+    if val == "i5":
         return 1
-    if val == 'negative_length':
+    if val == "negative_length":
         return 1
-    if val in ['alpha_x', 'alpha_y']:
+    if val in ["alpha_x", "alpha_y"]:
         return 1000
-    if val in ['mux', 'muy']:
+    if val in ["mux", "muy"]:
         return 1
-    if val in ['beta_x', 'beta_y']:
+    if val in ["beta_x", "beta_y"]:
         return 1000
     return 1
 
 
-def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, method='simplex', weights=weights_default,
-               vary_bend_angle=False, min_i5=False, bounds=None):
+def match_beam(
+    lat,
+    constr,
+    vars,
+    p_array,
+    navi,
+    verbose=True,
+    max_iter=1000,
+    method="simplex",
+    weights=weights_default,
+    vary_bend_angle=False,
+    min_i5=False,
+    bounds=None,
+):
     """
     Function to match twiss paramters
 
@@ -347,14 +400,14 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
         tw_loc = deepcopy(tws)
         tw0 = deepcopy(tws)
 
-        '''
+        """
         parameter to be varied is determined by variable class
-        '''
+        """
         for i in range(len(vars)):
             if vars[i].__class__ == Drift:
                 if x[i] < 0:
                     # print('negative length in match')
-                    return weights('negative_length')
+                    return weights("negative_length")
                     pass
                 vars[i].l = x[i]
             if vars[i].__class__ == Quadrupole:
@@ -370,7 +423,9 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
                 if vars[i][0].__class__ == Twiss and vars[i][1].__class__ == str:
                     k = vars[i][1]
                     tw_loc.__dict__[k] = x[i]
-            if vars[i].__class__ == tuple:  # all quads strength in tuple varied simultaneously
+            if (
+                vars[i].__class__ == tuple
+            ):  # all quads strength in tuple varied simultaneously
                 for v in vars[i]:
                     v.k1 = x[i]
 
@@ -381,20 +436,20 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
                 tw0 = deepcopy(tw_loc)
                 if tw_loc is None:
                     print("########")
-                    return weights('periodic')
+                    return weights("periodic")
 
         # save reference points where equality is asked
 
         ref_hsh = {}  # penalties on two-point inequalities
 
         for e in constr.keys():
-            if e == 'periodic':
+            if e == "periodic":
                 continue
-            if e == 'total_len':
+            if e == "total_len":
                 continue
             for k in constr[e].keys():
                 if constr[e][k].__class__ == list:
-                    if constr[e][k][0] == '->':
+                    if constr[e][k][0] == "->":
                         # print 'creating reference to', constr[e][k][1].id
                         ref_hsh[constr[e][k][1]] = {k: 0.0}
 
@@ -405,25 +460,27 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
         # tw_loc.s = 0
         # print("start = ", get_envelope(p_array0))
         navi.go_to_start()
-        tws_list, p_array0 = track(lat, p_array0, navi, print_progress=False, bounds=bounds)
+        tws_list, p_array0 = track(
+            lat, p_array0, navi, print_progress=False, bounds=bounds
+        )
         s = np.array([tw.s for tw in tws_list])
         # print("stop = ", tws_list[-1])
-        L = 0.
+        L = 0.0
         for e in lat.sequence:
             indx = (np.abs(s - L)).argmin()
 
             L += e.l
             tw_loc = tws_list[indx]
-            if 'global' in constr.keys():
+            if "global" in constr.keys():
                 # print 'there is a global constraint', constr['global'].keys()
-                for c in constr['global'].keys():
-                    if constr['global'][c].__class__ == list:
+                for c in constr["global"].keys():
+                    if constr["global"][c].__class__ == list:
                         # print 'list'
-                        v1 = constr['global'][c][1]
-                        if constr['global'][c][0] == '<':
+                        v1 = constr["global"][c][1]
+                        if constr["global"][c][0] == "<":
                             if tw_loc.__dict__[c] > v1:
                                 err = err + weights(k) * (tw_loc.__dict__[c] - v1) ** 2
-                        if constr['global'][c][0] == '>':
+                        if constr["global"][c][0] == ">":
                             # print '> constr'
                             if tw_loc.__dict__[c] < v1:
                                 err = err + weights(k) * (tw_loc.__dict__[c] - v1) ** 2
@@ -433,26 +490,25 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
                 ref_hsh[e] = deepcopy(tw_loc)
 
             if e in constr.keys():
-
                 for k in constr[e].keys():
                     # print(k)
                     if constr[e][k].__class__ == list:
                         v1 = constr[e][k][1]
 
-                        if constr[e][k][0] == '<':
+                        if constr[e][k][0] == "<":
                             if tw_loc.__dict__[k] > v1:
                                 err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
-                        if constr[e][k][0] == '>':
+                        if constr[e][k][0] == ">":
                             if tw_loc.__dict__[k] < v1:
                                 err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
-                        if constr[e][k][0] == 'a<':
+                        if constr[e][k][0] == "a<":
                             if np.abs(tw_loc.__dict__[k]) > v1:
                                 err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
-                        if constr[e][k][0] == 'a>':
+                        if constr[e][k][0] == "a>":
                             if np.abs(tw_loc.__dict__[k]) < v1:
                                 err = err + weights(k) * (tw_loc.__dict__[k] - v1) ** 2
 
-                        if constr[e][k][0] == '->':
+                        if constr[e][k][0] == "->":
                             try:
                                 # print 'huh', k, e.id, float(constr[e][k][2])
 
@@ -461,12 +517,16 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
                                 else:
                                     dv1 = 0.0
                                 # print 'weiter'
-                                err += (tw_loc.__dict__[k] - (ref_hsh[v1].__dict__[k] + dv1)) ** 2
+                                err += (
+                                    tw_loc.__dict__[k] - (ref_hsh[v1].__dict__[k] + dv1)
+                                ) ** 2
 
                                 if tw_loc.__dict__[k] < v1:
                                     err = err + (tw_loc.__dict__[k] - v1) ** 2
                             except:
-                                print('constraint error: rval should precede lval in lattice')
+                                print(
+                                    "constraint error: rval should precede lval in lattice"
+                                )
 
                         if tw_loc.__dict__[k] < 0:
                             # print 'negative constr (???)'
@@ -474,19 +534,20 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
 
                     else:
                         # print "safaf", constr[e][k] , tw_loc.__dict__[k], k, e.id, x
-                        err = err + weights(k) * (constr[e][k] - tw_loc.__dict__[k]) ** 2
+                        err = (
+                            err + weights(k) * (constr[e][k] - tw_loc.__dict__[k]) ** 2
+                        )
                         # print err
         for v in vars:
             print(v.id, v.k1)
         if "total_len" in constr.keys():
             total_len = constr["periodic"]
-            err = err + weights('total_len') * (tw_loc.s - total_len) ** 2
+            err = err + weights("total_len") * (tw_loc.s - total_len) ** 2
 
         if min_i5:
-            ''' evaluating integral parameters
-            '''
+            """evaluating integral parameters"""
             I1, I2, I3, I4, I5 = radiation_integrals(lat, tw0, nsuperperiod=1)
-            err += I5 * weights('i5')
+            err += I5 * weights("i5")
 
             Je = 2 + I4 / I2
             Jx = 1 - I4 / I2
@@ -499,18 +560,18 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
         # err += ( c1**2 + c2**2) * 1.e-6
 
         if verbose:
-            print('iteration error:', err)
+            print("iteration error:", err)
         return err
 
-    '''
+    """
     list of arguments determined based on the variable class
-    '''
+    """
     x = [0.0] * len(vars)
     for i in range(len(vars)):
         if vars[i].__class__ == list:
             if vars[i][0].__class__ == Twiss and vars[i][1].__class__ == str:
                 k = vars[i][1]
-                if k in ['beta_x', 'beta_y']:
+                if k in ["beta_x", "beta_y"]:
                     x[i] = 10.0
                 else:
                     x[i] = 0.0
@@ -528,23 +589,25 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
                 x[i] = vars[i].k1
 
     print("initial value: x = ", x)
-    if method == 'simplex':
+    if method == "simplex":
         res = fmin(errf, x, xtol=1e-3, maxiter=max_iter, maxfun=max_iter)
-    if method == 'cg':
-        res = fmin_cg(errf, x, gtol=1.e-5, epsilon=1.e-5, maxiter=max_iter)
-    if method == 'bfgs':
-        res = fmin_bfgs(errf, x, gtol=1.e-5, epsilon=1.e-5, maxiter=max_iter)
-    if method == 'powell':
-        res = minimize(errf, x, method='Powell', tol=1.e-5, options={"maxiter": max_iter})
+    if method == "cg":
+        res = fmin_cg(errf, x, gtol=1.0e-5, epsilon=1.0e-5, maxiter=max_iter)
+    if method == "bfgs":
+        res = fmin_bfgs(errf, x, gtol=1.0e-5, epsilon=1.0e-5, maxiter=max_iter)
+    if method == "powell":
+        res = minimize(
+            errf, x, method="Powell", tol=1.0e-5, options={"maxiter": max_iter}
+        )
     if method == "diff_evolution":
         workers = multiprocessing.cpu_count()
         bounds = []
         for xi in x:
             bounds.append((-5, 5))
         res = differential_evolution(errf, bounds, maxiter=max_iter, workers=1)
-    '''
+    """
     if initial twiss was varied set the twiss argument object to resulting value
-    '''
+    """
     # for i in range(len(vars)):
     #    if vars[i].__class__ == list:
     #        if vars[i][0].__class__ == Twiss and vars[i][1].__class__ == str:
@@ -555,11 +618,12 @@ def match_beam(lat, constr, vars, p_array, navi, verbose=True, max_iter=1000, me
 
 def match_matrix(lat, beam, varz, target_matrix):
     def error_func(x):
-
         for i in range(len(varz)):
             if varz[i].__class__ == Quadrupole:
                 varz[i].k1 = x[i]
-                varz[i].transfer_map = lat.method.create_tm(varz[i])  # create_transfer_map(varz[i])
+                varz[i].transfer_map = lat.method.create_tm(
+                    varz[i]
+                )  # create_transfer_map(varz[i])
 
         R = lattice_transfer_map(lat, beam.E)[0:2, 0:2]
         # print
@@ -593,7 +657,10 @@ def match_tunes(lat, tw0, quads, nu_x, nu_y, ncells=1, print_proc=0):
     # print nu_y, nu_y_old
     strengths1 = [p.k1 for p in quads]
 
-    constr = {end: {'mux': 2 * np.pi * nu_x / ncells, 'muy': 2. * np.pi * nu_y / ncells}, 'periodic': True}
+    constr = {
+        end: {"mux": 2 * np.pi * nu_x / ncells, "muy": 2.0 * np.pi * nu_y / ncells},
+        "periodic": True,
+    }
     # print constr
     vars = quads
 
@@ -608,8 +675,8 @@ def match_tunes(lat, tw0, quads, nu_x, nu_y, ncells=1, print_proc=0):
     return lat
 
 
-def closed_orbit(lattice, eps_xy=1.e-7, eps_angle=1.e-7, energy=0):
-    __author__ = 'Sergey Tomin'
+def closed_orbit(lattice, eps_xy=1.0e-7, eps_angle=1.0e-7, energy=0):
+    __author__ = "Sergey Tomin"
 
     """
     Searching of initial coordinates (p0) by iteration method.
@@ -632,6 +699,6 @@ def closed_orbit(lattice, eps_xy=1.e-7, eps_angle=1.e-7, energy=0):
         err = np.sum([1000 * (X[i, 0] - x[i]) ** 2 for i in range(4)])
         return err
 
-    res = fmin(errf, P, xtol=1e-8, maxiter=2e3, maxfun=2.e3)
+    res = fmin(errf, P, xtol=1e-8, maxiter=2e3, maxfun=2.0e3)
 
     return Particle(x=res[0], px=res[1], y=res[2], py=res[3])

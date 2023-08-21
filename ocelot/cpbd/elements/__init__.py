@@ -1,7 +1,28 @@
-__all__ = ['UnknownElement', 'Aperture', 'Bend', 'Cavity', 'Drift', 'Element',
-           'Hcor', 'Marker', 'Matrix', 'Monitor', 'Multipole', 'Octupole', 'Pulse',
-           'Quadrupole', 'RBend', 'SBend', 'Sextupole', 'Solenoid', 'TDCavity',
-           'TWCavity', 'Undulator', 'Vcor', 'XYQuadrupole']
+__all__ = [
+    "UnknownElement",
+    "Aperture",
+    "Bend",
+    "Cavity",
+    "Drift",
+    "Element",
+    "Hcor",
+    "Marker",
+    "Matrix",
+    "Monitor",
+    "Multipole",
+    "Octupole",
+    "Pulse",
+    "Quadrupole",
+    "RBend",
+    "SBend",
+    "Sextupole",
+    "Solenoid",
+    "TDCavity",
+    "TWCavity",
+    "Undulator",
+    "Vcor",
+    "XYQuadrupole",
+]
 
 from ocelot.cpbd.elements.aperture import Aperture
 from ocelot.cpbd.elements.bend import Bend

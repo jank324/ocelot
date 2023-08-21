@@ -1,4 +1,4 @@
-'''
+"""
 
 utilities to add externaly calculated wakes to beam files
 Usage:
@@ -9,31 +9,34 @@ python add_wake.py current       beamfile currentfile
 from script:
 from ocelot.utils.add_wake import add_wake_to_beamf
 add_wake_to_beamf(beamf, new_beamf)
-'''
-#sys.path.append("../../")
-from ocelot.adaptors.genesis import *
-import cpbd.reswake as w
+"""
 from copy import deepcopy
-#try:
+
+import cpbd.reswake as w
+
+# sys.path.append("../../")
+from ocelot.adaptors.genesis import *
+
+# try:
 #    import matplotlib.animation as anim
-#except:
+# except:
 #    print 'animation not installed'
-#import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 def get_current(beamf):
     beam = read_beam_file(beamf)
-    beam.columns = ['ZPOS','CURPEAK']
-    #beam.I = beam.I[::-1]
+    beam.columns = ["ZPOS", "CURPEAK"]
+    # beam.I = beam.I[::-1]
     return beam
 
 
 def get_wake_from_file(wakefile):
-    buf = open(wakefile).read().split('\n')
+    buf = open(wakefile).read().split("\n")
     wake = []
     for l in buf:
         d = l.split()
-        if len(d)>1:
+        if len(d) > 1:
             wake.append(float(d[1]))
     return wake
 
@@ -42,7 +45,7 @@ def add_wake_to_beam(beam):
     # beam = read_beam_file(beamf)
     # s, bunch, wake = w.xfel_pipe_wake(s=beam.z, current=beam.I[::-1])
     s, bunch, wake = w.xfel_pipe_wake(s=beam.z, current=beam.I)
-    print ('read ', len(wake), ' slice values')
+    print("read ", len(wake), " slice values")
     beam1 = deepcopy(beam)
     beam1.eloss = wake[::-1]
     # f=open(new_beamf,'w')
@@ -50,57 +53,57 @@ def add_wake_to_beam(beam):
     # f.close()
     return beam1
 
-if len(sys.argv)>3:
+
+if len(sys.argv) > 3:
     command = sys.argv[1]
-    beamf = sys.argv[2]    
+    beamf = sys.argv[2]
     outf = sys.argv[3]
 else:
-    command = ''
-    #beamf = '/home/iagapov/tmp/run_2/tmp.beam'
-    #command = 'current'
-    #outf = 'tmp.beam'
- 
+    command = ""
+    # beamf = '/home/iagapov/tmp/run_2/tmp.beam'
+    # command = 'current'
+    # outf = 'tmp.beam'
 
-if command == 'current':
-        beam = read_beam_file(beamf)
-        beam.columns = ['ZPOS','CURPEAK']
-        beam.I = beam.I[::-1]
-        f=open(outf,'w')
-        f.write(beam_file_str(beam))
-        f.close()
-        #print beam_file_str(beam)
 
-if command == 'add_from_file':
+if command == "current":
+    beam = read_beam_file(beamf)
+    beam.columns = ["ZPOS", "CURPEAK"]
+    beam.I = beam.I[::-1]
+    f = open(outf, "w")
+    f.write(beam_file_str(beam))
+    f.close()
+    # print beam_file_str(beam)
 
-    if len(sys.argv)>2:
+if command == "add_from_file":
+    if len(sys.argv) > 2:
         wakef = sys.argv[3]
-        outf = sys.argv[4]    
+        outf = sys.argv[4]
     else:
-        beamf = '/home/iagapov/tmp/run_2/tmp.beam'
-        command = 'current'
-   
+        beamf = "/home/iagapov/tmp/run_2/tmp.beam"
+        command = "current"
+
     wake = get_wake_from_file(wakef)
 
     beam = read_beam_file(beamf)
-    #s, bunch, wake = w.xfel_pipe_wake(s=array(beam.z), current=array(beam.I))
-    print ('read ', len(wake), ' slice values')
+    # s, bunch, wake = w.xfel_pipe_wake(s=array(beam.z), current=array(beam.I))
+    print("read ", len(wake), " slice values")
     beam.eloss = wake[::-1]
-    
-    f=open(outf,'w')
+
+    f = open(outf, "w")
     f.write(beam_file_str(beam))
     f.close()
 
     beam = read_beam_file(beamf)
 
 if command == "add":
-    #if len(sys.argv)>2:
+    # if len(sys.argv)>2:
     #    #wakef = sys.argv[3]
     #    outf = sys.argv[4]
-    #else:
+    # else:
     #    beamf = '/home/iagapov/tmp/run_2/tmp.beam'
     #    command = 'current'
 
-    #wake = get_wake_from_file(wakef)
+    # wake = get_wake_from_file(wakef)
     beam = read_beam_file(beamf)
     beam1 = add_wake_to_beam(beam)
     write_beam_file(outf, beam1)

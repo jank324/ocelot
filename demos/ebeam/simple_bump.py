@@ -1,6 +1,6 @@
 from ocelot import *
-from ocelot.utils.bump_utils import *
 from ocelot.gui import *
+from ocelot.utils.bump_utils import *
 
 d = Drift(l=0.35)
 d1 = Drift(l=0.6)

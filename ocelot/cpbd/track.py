@@ -1,32 +1,32 @@
 from __future__ import annotations
 
-__author__ = 'Sergey Tomin'
+__author__ = "Sergey Tomin"
 
-import os
-from dataclasses import dataclass, astuple
 import copy
 import logging
-from time import time
 import multiprocessing as mp
-from typing import Union, List, Tuple, Optional, Any, Iterable
+import os
+from dataclasses import astuple, dataclass
+from time import time
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
-from scipy.stats import truncnorm
-import pandas as pd
 import numpy as np
+import pandas as pd
+from scipy.stats import truncnorm
 
-from ocelot.cpbd.transformations.transformation import TMTypes
-from ocelot.cpbd.optics import *
 from ocelot.cpbd.beam import *
-from ocelot.cpbd.errors import *
 from ocelot.cpbd.elements import *
-from ocelot.cpbd.physics_proc import PhysProc
-from ocelot.cpbd.io import is_an_mpi_process, ParameterScanFile
-from ocelot.cpbd.physics_proc import CopyBeam
+from ocelot.cpbd.errors import *
+from ocelot.cpbd.io import ParameterScanFile, is_an_mpi_process
+from ocelot.cpbd.optics import *
+from ocelot.cpbd.physics_proc import CopyBeam, PhysProc
+from ocelot.cpbd.transformations.transformation import TMTypes
 
 _logger = logging.getLogger(__name__)
 
 try:
     from scipy.signal import argrelextrema
+
     extrema_chk = 1
 except:
     extrema_chk = 0
@@ -44,21 +44,22 @@ else:
     else:
         IS_MPI = False
 
-def aperture_limit(lat, xlim = 1, ylim = 1):
-    tws=twiss(lat, Twiss(), nPoints=1000)
+
+def aperture_limit(lat, xlim=1, ylim=1):
+    tws = twiss(lat, Twiss(), nPoints=1000)
     bxmax = max([tw.beta_x for tw in tws])
     bymax = max([tw.beta_y for tw in tws])
     bx0 = tws[0].beta_x
     by0 = tws[0].beta_y
-    px_lim = float(xlim)/np.sqrt(bxmax*bx0)
-    py_lim = float(ylim)/np.sqrt(bymax*by0)
-    xlim = float(xlim)*np.sqrt(bx0/bxmax)
-    ylim = float(ylim)*np.sqrt(by0/bymax)
+    px_lim = float(xlim) / np.sqrt(bxmax * bx0)
+    py_lim = float(ylim) / np.sqrt(bymax * by0)
+    xlim = float(xlim) * np.sqrt(bx0 / bxmax)
+    ylim = float(ylim) * np.sqrt(by0 / bymax)
 
     return xlim, ylim, px_lim, py_lim
 
 
-def arg_peaks(data, extrema_chk = extrema_chk):
+def arg_peaks(data, extrema_chk=extrema_chk):
     """
     the function search peaks of spectrum and return positions of all peaks
     if extrema_chk == 1 uses numpy module
@@ -69,7 +70,7 @@ def arg_peaks(data, extrema_chk = extrema_chk):
     else:
         diff_y = np.diff(data)
         extrm_y = np.diff(np.sign(diff_y))
-        return np.where(extrm_y<0)[0]+1
+        return np.where(extrm_y < 0)[0] + 1
 
 
 def spectrum(data1D):
@@ -89,7 +90,7 @@ def find_nearest(positions, value):
     input: 1D array and value
     the function searches nearest value in the array to the given value
     """
-    idx = (np.abs(positions-value)).argmin()
+    idx = (np.abs(positions - value)).argmin()
     return positions[idx]
 
 
@@ -100,13 +101,13 @@ def find_highest(sorted_posns, value, diap):
     """
     poss = []
     for pos in sorted_posns:
-        if value-diap <= pos <= value+diap:
+        if value - diap <= pos <= value + diap:
             poss.append(pos)
     return poss[-1]
 
 
-def nearest_particle(track_list, xi,yi):
-    #x_array = np.unique(np.sort(map(lambda pxy: pxy.x, pxy_list)))
+def nearest_particle(track_list, xi, yi):
+    # x_array = np.unique(np.sort(map(lambda pxy: pxy.x, pxy_list)))
     y_array = np.unique(np.sort([pxy.y for pxy in track_list]))
     yi = find_nearest(y_array, yi)
     x_array_i = []
@@ -115,14 +116,14 @@ def nearest_particle(track_list, xi,yi):
             x_array_i.append(pxy.x)
     xi = find_nearest(np.array(x_array_i), xi)
 
-    #print "inside nearest_particle, xi, yi : ", xi, yi
+    # print "inside nearest_particle, xi, yi : ", xi, yi
     for pxy in track_list:
-        #print "inside nearest_particle: ", pxy.x, pxy.y
+        # print "inside nearest_particle: ", pxy.x, pxy.y
         if pxy.x == xi and pxy.y == yi:
             return pxy
 
 
-def harmonic_position(data1D, nu = None, diap = 0.1, nearest = False):
+def harmonic_position(data1D, nu=None, diap=0.1, nearest=False):
     """
     function searches three highest harmonics and return:
     a. the highest if nu == None
@@ -132,8 +133,8 @@ def harmonic_position(data1D, nu = None, diap = 0.1, nearest = False):
     ft_maxi = arg_peaks(ft_shift)
     if len(ft_maxi) == 0:
         return -0.001
-    freq_peaks = freq[ft_maxi][int(len(ft_maxi)/2):]
-    peaks = ft_shift[ft_maxi][int(len(ft_maxi)/2):]
+    freq_peaks = freq[ft_maxi][int(len(ft_maxi) / 2) :]
+    peaks = ft_shift[ft_maxi][int(len(ft_maxi) / 2) :]
 
     main_3 = freq_peaks[np.argsort(peaks)]
     if nearest:
@@ -149,16 +150,16 @@ def harmonic_position(data1D, nu = None, diap = 0.1, nearest = False):
     return nearest_nu
 
 
-def freq_analysis(track_list, lat, nturns, harm=True, diap=0.10, nearest=False, nsuperperiods=1):
-
+def freq_analysis(
+    track_list, lat, nturns, harm=True, diap=0.10, nearest=False, nsuperperiods=1
+):
     def beta_freq(lat):
-
         tws = twiss(lat, Twiss())
-        nux = tws[-1].mux/2./pi*nsuperperiods
-        nuy = tws[-1].muy/2./pi*nsuperperiods
-        print ("freq. analysis: Qx = ", nux, " Qy = ", nuy)
-        nux = abs(int(nux+0.5) - nux)
-        nuy = abs(int(nuy+0.5) - nuy)
+        nux = tws[-1].mux / 2.0 / pi * nsuperperiods
+        nuy = tws[-1].muy / 2.0 / pi * nsuperperiods
+        print("freq. analysis: Qx = ", nux, " Qy = ", nuy)
+        nux = abs(int(nux + 0.5) - nux)
+        nuy = abs(int(nuy + 0.5) - nuy)
         print("freq. analysis: nux = ", nux)
         print("freq. analysis: nuy = ", nuy)
         return nux, nuy
@@ -166,12 +167,14 @@ def freq_analysis(track_list, lat, nturns, harm=True, diap=0.10, nearest=False, 
     nux, nuy = None, None
     if harm is True:
         nux, nuy = beta_freq(lat)
-    #fma(pxy_list, nux = nux, nuy = nuy)
+    # fma(pxy_list, nux = nux, nuy = nuy)
     for n, pxy in enumerate(track_list):
-        if pxy.turn == nturns-1:
+        if pxy.turn == nturns - 1:
             if len(pxy.p_list) == 1:
-                #print len(pxy.p_list)
-                print ("For frequency analysis coordinates are needed for each turns. Check tracking option 'save_track' must be True ")
+                # print len(pxy.p_list)
+                print(
+                    "For frequency analysis coordinates are needed for each turns. Check tracking option 'save_track' must be True "
+                )
                 return track_list
             x = [p[0] for p in pxy.p_list]
             y = [p[2] for p in pxy.p_list]
@@ -182,16 +185,18 @@ def freq_analysis(track_list, lat, nturns, harm=True, diap=0.10, nearest=False, 
 
 
 class Track_info:
-    def __init__(self, particle, x=0., y=0.):
+    def __init__(self, particle, x=0.0, y=0.0):
         self.particle = particle
         self.turn = 0
-        self.x = particle.x #initail coordinate
-        self.y = particle.y #initail coordinate
-        #self.x_array = [p.x]
-        #self.y_array = [p.y]
+        self.x = particle.x  # initail coordinate
+        self.y = particle.y  # initail coordinate
+        # self.x_array = [p.x]
+        # self.y_array = [p.y]
         self.mux = -0.001
         self.muy = -0.001
-        self.p_list = [[particle.x, particle.px, particle.y, particle.py, particle.tau, particle.p]]
+        self.p_list = [
+            [particle.x, particle.px, particle.y, particle.py, particle.tau, particle.p]
+        ]
 
     def get_x(self):
         return np.array([p[0] for p in self.p_list])
@@ -206,19 +211,19 @@ class Track_info:
         return np.array([p[3] for p in self.p_list])
 
 
-def contour_da(track_list, nturns, lvl = 0.9):
+def contour_da(track_list, nturns, lvl=0.9):
     """
     the function defines contour of DA. If particle "lived" > lvl*nturns then we set up nturns
     if particle "lived" < lvl*nturns then we set up 0
     """
-    if lvl>1:
+    if lvl > 1:
         lvl = 1
-    elif lvl<=0:
+    elif lvl <= 0:
         lvl = 1
 
     ctr_da = []
     for pxy in track_list:
-        if pxy.turn >= lvl*(nturns-1):
+        if pxy.turn >= lvl * (nturns - 1):
             ctr_da.append(nturns)
         else:
             ctr_da.append(0)
@@ -228,33 +233,33 @@ def contour_da(track_list, nturns, lvl = 0.9):
 def stable_particles(track_list, nturns):
     pxy_list_sbl = []
     for pxy in track_list:
-        if pxy.turn >= nturns-1:
+        if pxy.turn >= nturns - 1:
             pxy_list_sbl.append(pxy)
 
     return np.array(pxy_list_sbl)
 
 
-def phase_space_transform(x,y, tws):
+def phase_space_transform(x, y, tws):
     """
     curved line of second order
     a11*x**2 + a22*y**2 + 2*a12*x*y + 2*a13*x + 2*a23*y + a33 = 0
     gamma*x**2 + 2*alpha*x*x' + beta*x'**2 = const
     """
 
-    angle = np.arctan(2*tws.alpha_x/(tws.gamma_x-tws.beta_x))/2.
-    x = x*np.cos(angle) - y*np.sin(angle)
-    y = x*np.sin(angle) + y*np.cos(angle)
-    return x,y
+    angle = np.arctan(2 * tws.alpha_x / (tws.gamma_x - tws.beta_x)) / 2.0
+    x = x * np.cos(angle) - y * np.sin(angle)
+    y = x * np.sin(angle) + y * np.cos(angle)
+    return x, y
 
 
-def create_track_list(x_array, y_array, p_array, energy=0.):
+def create_track_list(x_array, y_array, p_array, energy=0.0):
     """
     the function create list of Pxy
     """
     track_list = []
     for p in p_array:
-        for y in (y_array):
-            for x in (x_array):
+        for y in y_array:
+            for x in x_array:
                 particle = Particle(x=x, y=y, p=p, E=energy)
                 pxy = Track_info(particle, x, y)
                 track_list.append(pxy)
@@ -262,30 +267,32 @@ def create_track_list(x_array, y_array, p_array, energy=0.):
     return track_list
 
 
-def ellipse_track_list(beam, n_t_sigma = 3, num = 1000, type = "contour"):
+def ellipse_track_list(beam, n_t_sigma=3, num=1000, type="contour"):
     beam.sizes()
-    #sigma_x = sqrt((sigma_e*tws0.Dx)**2 + emit*tws0.beta_x)
-    #sigma_xp = sqrt((sigma_e*tws0.Dxp)**2 + emit*tws0.gamma_x)
+    # sigma_x = sqrt((sigma_e*tws0.Dx)**2 + emit*tws0.beta_x)
+    # sigma_xp = sqrt((sigma_e*tws0.Dxp)**2 + emit*tws0.gamma_x)
     if type == "contour":
-        t = np.linspace(0,2*pi, num)
-        x = n_t_sigma*beam.sigma_x*np.cos(t)
-        y = n_t_sigma*beam.sigma_xp*np.sin(t)
+        t = np.linspace(0, 2 * pi, num)
+        x = n_t_sigma * beam.sigma_x * np.cos(t)
+        y = n_t_sigma * beam.sigma_xp * np.sin(t)
     else:
-        x = truncnorm( -n_t_sigma,  n_t_sigma, loc=0, scale=beam.sigma_x).rvs(num)
-        y = truncnorm( -n_t_sigma,  n_t_sigma, loc=0, scale=beam.sigma_xp).rvs(num)
+        x = truncnorm(-n_t_sigma, n_t_sigma, loc=0, scale=beam.sigma_x).rvs(num)
+        y = truncnorm(-n_t_sigma, n_t_sigma, loc=0, scale=beam.sigma_xp).rvs(num)
     tws0 = Twiss(beam)
-    x_array, xp_array = phase_space_transform(x,y, tws0)
+    x_array, xp_array = phase_space_transform(x, y, tws0)
     track_list = []
-    for x,y in zip(x_array + beam.x, xp_array + beam.xp):
-        p = Particle(x = x, px = y, p=-0.0)
+    for x, y in zip(x_array + beam.x, xp_array + beam.xp):
+        p = Particle(x=x, px=y, p=-0.0)
         pxy = Track_info(p, x, y)
         track_list.append(pxy)
 
     return track_list
 
 
-def track_nturns(lat, nturns, track_list, nsuperperiods=1, save_track=True, print_progress=True):
-    xlim, ylim, px_lim, py_lim = aperture_limit(lat, xlim = 1, ylim = 1)
+def track_nturns(
+    lat, nturns, track_list, nsuperperiods=1, save_track=True, print_progress=True
+):
+    xlim, ylim, px_lim, py_lim = aperture_limit(lat, xlim=1, ylim=1)
     navi = Navigator(lat)
 
     t_maps = get_map(lat, lat.totalLen, navi)
@@ -295,7 +302,8 @@ def track_nturns(lat, nturns, track_list, nsuperperiods=1, save_track=True, prin
     p_array.list2array(p_list)
 
     for i in range(nturns):
-        if print_progress: print(i)
+        if print_progress:
+            print(i)
         for n in range(nsuperperiods):
             for tm in t_maps:
                 tm.apply(p_array)
@@ -309,10 +317,12 @@ def track_nturns(lat, nturns, track_list, nsuperperiods=1, save_track=True, prin
     return np.array(track_list_const)
 
 
-def track_nturns_mpi(mpi_comm, lat, nturns, track_list, errors=None, nsuperperiods=1, save_track=True):
+def track_nturns_mpi(
+    mpi_comm, lat, nturns, track_list, errors=None, nsuperperiods=1, save_track=True
+):
     size = mpi_comm.Get_size()
     rank = mpi_comm.Get_rank()
-    lat_copy = create_copy(lat, nsuperperiods = nsuperperiods)
+    lat_copy = create_copy(lat, nsuperperiods=nsuperperiods)
     nsuperperiods = 1
     if errors != None:
         if rank == 0:
@@ -335,7 +345,9 @@ def track_nturns_mpi(mpi_comm, lat, nturns, track_list, errors=None, nsuperperio
         # but for nturns = 1000 program crashes with error in mpi_comm.gather()
         # the same situation if treads not so much - solution increase number of treads.
         print("nsuperperiods = ", nsuperperiods)
-        track_list = track_nturns(lat, nturns, track_list, nsuperperiods, save_track=save_track)
+        track_list = track_nturns(
+            lat, nturns, track_list, nsuperperiods, save_track=save_track
+        )
         return track_list
 
     if rank == 0:
@@ -343,17 +355,26 @@ def track_nturns_mpi(mpi_comm, lat, nturns, track_list, errors=None, nsuperperio
         chunks_track_list = [[] for _ in range(size)]
         N = len(track_list)
         for i, x in enumerate(track_list):
-            chunks_track_list[int(size*i/N)].append(x)
+            chunks_track_list[int(size * i / N)].append(x)
     else:
         track_list = None
         chunks_track_list = None
 
     start = time()
     track_list = mpi_comm.scatter(chunks_track_list, root=0)
-    print(" scatter time = ", time() - start, " sec, rank = ", rank, "  len(pxy_list) = ", len(track_list) )
+    print(
+        " scatter time = ",
+        time() - start,
+        " sec, rank = ",
+        rank,
+        "  len(pxy_list) = ",
+        len(track_list),
+    )
     start = time()
-    track_list = track_nturns(lat, nturns, track_list, nsuperperiods, save_track =save_track)
-    print( " scanning time = ", time() - start, " sec, rank = ", rank)
+    track_list = track_nturns(
+        lat, nturns, track_list, nsuperperiods, save_track=save_track
+    )
+    print(" scanning time = ", time() - start, " sec, rank = ", rank)
     start = time()
     out_track_list = mpi_comm.gather(track_list, root=0)
     print(" gather time = ", time() - start, " sec, rank = ", rank)
@@ -368,33 +389,47 @@ def track_nturns_mpi(mpi_comm, lat, nturns, track_list, errors=None, nsuperperio
         return track_list
 
 
-def fma(lat, nturns, x_array, y_array, nsuperperiods = 1):
+def fma(lat, nturns, x_array, y_array, nsuperperiods=1):
     from mpi4py import MPI
+
     mpi_comm = MPI.COMM_WORLD
     rank = mpi_comm.Get_rank()
     track_list = create_track_list(x_array, y_array, p_array=[0])
-    track_list = track_nturns_mpi(mpi_comm, lat, nturns, track_list, nsuperperiods=nsuperperiods)
+    track_list = track_nturns_mpi(
+        mpi_comm, lat, nturns, track_list, nsuperperiods=nsuperperiods
+    )
     if rank == 0:
         nx = len(x_array)
         ny = len(y_array)
         ctr_da = contour_da(track_list, nturns)
-        #ctr_da = tra.countour_da()
-        track_list = freq_analysis(track_list, lat, nturns, harm = True)
+        # ctr_da = tra.countour_da()
+        track_list = freq_analysis(track_list, lat, nturns, harm=True)
         da_mux = np.array(map(lambda pxy: pxy.mux, track_list))
         da_muy = np.array(map(lambda pxy: pxy.muy, track_list))
-        return ctr_da.reshape(ny,nx), da_mux.reshape(ny,nx), da_muy.reshape(ny,nx)
+        return ctr_da.reshape(ny, nx), da_mux.reshape(ny, nx), da_muy.reshape(ny, nx)
 
 
 def da_mpi(lat, nturns, x_array, y_array, errors=None, nsuperperiods=1):
     from mpi4py import MPI
+
     mpi_comm = MPI.COMM_WORLD
     rank = mpi_comm.Get_rank()
 
     track_list = create_track_list(x_array, y_array, p_array=[0])
-    track_list = track_nturns_mpi(mpi_comm, lat, nturns, track_list, errors=errors, nsuperperiods=nsuperperiods, save_track=False)
+    track_list = track_nturns_mpi(
+        mpi_comm,
+        lat,
+        nturns,
+        track_list,
+        errors=errors,
+        nsuperperiods=nsuperperiods,
+        save_track=False,
+    )
 
     if rank == 0:
-        da = np.array(map(lambda track: track.turn, track_list))#.reshape((len(y_array), len(x_array)))
+        da = np.array(
+            map(lambda track: track.turn, track_list)
+        )  # .reshape((len(y_array), len(x_array)))
         nx = len(x_array)
         ny = len(y_array)
         return da.reshape(ny, nx)
@@ -416,22 +451,28 @@ def tracking_step(lat, particle_list, dz, navi):
     for tm in t_maps:
         start = time()
         tm.apply(particle_list)
-        _logger.debug(" tracking_step -> tm.class: " + tm.__class__.__name__  + "  l= "+ str(tm.length))
-        _logger.debug(" tracking_step -> tm.apply: time exec = " + str(time() - start) + "  sec")
+        _logger.debug(
+            " tracking_step -> tm.class: "
+            + tm.__class__.__name__
+            + "  l= "
+            + str(tm.length)
+        )
+        _logger.debug(
+            " tracking_step -> tm.apply: time exec = " + str(time() - start) + "  sec"
+        )
     return
 
 
 def track(
-        lattice,
-        p_array,
-        navi=None,
-        print_progress=True,
-        calc_tws=True,
-        bounds=None,
-        return_df=False,
-        overwrite_progress=True,
-        ) -> Tuple[Union[List[Twiss], pd.DataFrame], ParticleArray]:
-
+    lattice,
+    p_array,
+    navi=None,
+    print_progress=True,
+    calc_tws=True,
+    bounds=None,
+    return_df=False,
+    overwrite_progress=True,
+) -> Tuple[Union[List[Twiss], pd.DataFrame], ParticleArray]:
     """
     tracking through the lattice
 
@@ -447,27 +488,25 @@ def track(
         navi = Navigator(lattice)
     tw0 = get_envelope(p_array, bounds=bounds) if calc_tws else Twiss()
     tws_track = [tw0]
-    L = 0.
+    L = 0.0
 
     for t_maps, dz, proc_list, phys_steps in navi.get_next_step():
         for tm in t_maps:
             start = time()
             tm.apply(p_array)
             time_delta = time() - start
-            _logger.debug("tracking_step -> tm.class: %s  l = %s",
-                          tm.__class__.__name__,
-                          tm.length
-            )
             _logger.debug(
-                "tracking_step -> tm.apply: time exec = %s sec",
-                time_delta
+                "tracking_step -> tm.class: %s  l = %s",
+                tm.__class__.__name__,
+                tm.length,
             )
+            _logger.debug("tracking_step -> tm.apply: time exec = %s sec", time_delta)
 
-        #part = p_array[0]
+        # part = p_array[0]
         for p, z_step in zip(proc_list, phys_steps):
             p.z0 = navi.z0
             p.apply(p_array, z_step)
-        #p_array[0] = part
+        # p_array[0] = part
         if p_array.n == 0:
             _logger.debug(" Tracking stop: p_array.n = 0")
             return tws_track, p_array
@@ -477,8 +516,8 @@ def track(
         tws_track.append(tw)
 
         if print_progress:
-            names = [type(p).__name__ for p in proc_list] # process names
-            names = ', '.join(names)
+            names = [type(p).__name__ for p in proc_list]  # process names
+            names = ", ".join(names)
             msg = f"z = {navi.z0} / {lattice.totalLen}. Applied: {names}"
             end = "\n"
             if overwrite_progress:
@@ -496,7 +535,6 @@ def track(
     return tws_track, p_array
 
 
-
 def lattice_track(lat, p):
     plist = [copy.copy(p)]
     for elem in lat.sequence:
@@ -510,24 +548,24 @@ def lattice_track(lat, p):
 
 
 def merge_drifts(lat):
-    print( "before merging: len(sequence) = ", len(lat.sequence) )
-    L = 0.
+    print("before merging: len(sequence) = ", len(lat.sequence))
+    L = 0.0
     seq = []
     new_elem = None
     for elem in lat.sequence:
-        #next_elem = lat.sequence[i+1]
+        # next_elem = lat.sequence[i+1]
         if elem.__class__ == Drift:
             L += elem.l
             new_elem = Drift(l=L, eid=elem.id)
         else:
             if new_elem != None:
                 seq.append(new_elem)
-                L = 0.
+                L = 0.0
                 new_elem = None
             seq.append(elem)
     if new_elem != None:
         seq.append(new_elem)
-    print( "after merging: len(sequence) = ", len(seq) )
+    print("after merging: len(sequence) = ", len(seq))
     return MagneticLattice(sequence=seq)
 
 
@@ -570,15 +608,17 @@ class ParameterScanner:
     :param markers: List of Marker instances.
 
     """
+
     # For now user should ensure nprocesses is not great than number of jobs in mpi
     # case.  otherwise empty output groups are made.
-    def __init__(self,
-                 navigator: Navigator,
-                 parameter_values: Iterable[Any],
-                 parray0: Union[ParticleArray, Iterable[ParticleArray]],
-                 parameter_name: str = "parameter",
-                 markers: Optional[Iterable[Marker]] = None,
-                 ):
+    def __init__(
+        self,
+        navigator: Navigator,
+        parameter_values: Iterable[Any],
+        parray0: Union[ParticleArray, Iterable[ParticleArray]],
+        parameter_name: str = "parameter",
+        markers: Optional[Iterable[Marker]] = None,
+    ):
         self.navigator = navigator
         self.parameter_values = parameter_values
         self.parray0 = parray0
@@ -588,16 +628,17 @@ class ParameterScanner:
             self.markers = []
 
         # If an iterable of input is provided.
-        if (not isinstance(self.parray0, ParticleArray)
-                and len(self.parray0) != len(self.parameter_values)):
-            raise ValueError(
-                "parameter_values length doesn't match number of parrays"
-            )
+        if not isinstance(self.parray0, ParticleArray) and len(self.parray0) != len(
+            self.parameter_values
+        ):
+            raise ValueError("parameter_values length doesn't match number of parrays")
 
-    def prepare_navigator(self,
-                          _value: Any = None,
-                          _parray0: Optional[ParticleArray] = None,
-                          _job_index: Optional[int] = None) -> Navigator:
+    def prepare_navigator(
+        self,
+        _value: Any = None,
+        _parray0: Optional[ParticleArray] = None,
+        _job_index: Optional[int] = None,
+    ) -> Navigator:
         return copy.deepcopy(self.navigator)
 
     def generate_unique_navigators_with_parray0s(self):
@@ -628,8 +669,9 @@ class ParameterScanner:
             parray0 = parray0s[i]
             # Prepare arguments for the processes.  Each one gets a differently
             # prepared navigator and a copy of the parray.
-            payload = TrackPayload(navigator.lat, parray0.copy(), navigator,
-                                      job_index=i)
+            payload = TrackPayload(
+                navigator.lat, parray0.copy(), navigator, job_index=i
+            )
 
             payloads.append(payload)
         return payloads
@@ -645,7 +687,7 @@ class ParameterScanner:
             return len(self.parameter_values) * [self.parray0]
         if len(self.parameter_values) != len(self.parray0):
             raise ValueError(f"Parameter values len != [parray0]")
-        return self.parray0 # Then it is an iterable of ParticleArray instances
+        return self.parray0  # Then it is an iterable of ParticleArray instances
 
     def scan(self, filename: str, nproc: int = 1):
         """Run the parameter scan, possibly across multiple cores.  MPI is
@@ -668,10 +710,12 @@ class ParameterScanner:
             else:
                 self._run_pool(args, psf, nproc)
 
-    def _run_pool(self, track_payloads: Iterable[TrackPayload], psf, nproc: int) -> None:
+    def _run_pool(
+        self, track_payloads: Iterable[TrackPayload], psf, nproc: int
+    ) -> None:
         # TODO Better:
         # https://stackoverflow.com/questions/15704010/write-data-to-hdf-file-using-multiprocessing
-        if nproc == -1: # Spawn as many jobs as possibly or necessary.
+        if nproc == -1:  # Spawn as many jobs as possibly or necessary.
             nproc = min(self.njobs, mp.cpu_count())
 
         # outqueue = mp.Queue()
@@ -699,7 +743,7 @@ class ParameterScanner:
     def _run_mpi(self, payloads: Iterable[TrackPayload], psf) -> None:
         job_indices = self._get_job_indices_for_this_mpi_core()
         this_cores_track_args = [payloads[i] for i in job_indices]
-        if not job_indices: # If given no jobs to run on this core, do nothing
+        if not job_indices:  # If given no jobs to run on this core, do nothing
             return
 
         for payload in payloads:
@@ -713,13 +757,12 @@ class ParameterScanner:
             for dump in dumps:
                 psf.write_parray_marker(job_index, dump.name, dump.parray)
 
-            _logger.info(
-                f"Written marker distributions for %s at %s",
-                job_index, RANK
-            )
+            _logger.info(f"Written marker distributions for %s at %s", job_index, RANK)
 
-        _logger.info("Finished all parameters to be scanned"
-                     f" at RANK={RANK} and results written to {psf.filename}")
+        _logger.info(
+            "Finished all parameters to be scanned"
+            f" at RANK={RANK} and results written to {psf.filename}"
+        )
 
     def _get_job_indices_for_this_mpi_core(self) -> List[int]:
         all_job_indices = range(self.njobs)
@@ -746,14 +789,16 @@ class TrackPayload:
     def run_and_get_dumps(self):
         _logger.info("Starting tracking for job number %s.", self.job_index)
 
-        _, parray1 = track(lattice=self.lattice,
-                           p_array=self.parray0,
-                           navi=self.navigator,
-                           print_progress=self.print_progress,
-                           calc_tws=self.calc_tws,
-                           bounds=self.bounds,
-                           return_df=self.return_df,
-                           overwrite_progress=self.overwrite_progress)
+        _, parray1 = track(
+            lattice=self.lattice,
+            p_array=self.parray0,
+            navi=self.navigator,
+            print_progress=self.print_progress,
+            calc_tws=self.calc_tws,
+            bounds=self.bounds,
+            return_df=self.return_df,
+            overwrite_progress=self.overwrite_progress,
+        )
 
         marker_dump_processes = []
         for process in self.navigator.inactive_processes:
@@ -772,6 +817,7 @@ class TrackPayload:
 
 class UnitStepScanner(ParameterScanner):
     """Simple ParameterScanner subclass for scanning the Navigator unit step."""
+
     def prepare_navigator(self, unit_step: float, _parray0, _job_index) -> Navigator:
         navi = super().prepare_navigator(unit_step, _parray0, _job_index)
         navi.unit_step = unit_step

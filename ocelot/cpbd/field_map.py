@@ -1,56 +1,63 @@
-__author__ = 'Sergey Tomin'
+__author__ = "Sergey Tomin"
 
 import numpy as np
 
+
 def length_array(xyz_array):
-    inds = xyz_array[xyz_array[:-1]>xyz_array[1:]]
-    if len(inds)>0:
-        nxyz = np.argwhere(xyz_array == inds[0])[0][0]+1
+    inds = xyz_array[xyz_array[:-1] > xyz_array[1:]]
+    if len(inds) > 0:
+        nxyz = np.argwhere(xyz_array == inds[0])[0][0] + 1
     else:
         nxyz = len(xyz_array)
     return nxyz
 
 
-def read_flat_file(field_file, sCom = "#"):
+def read_flat_file(field_file, sCom="#"):
     # File must have 3 cols, else will be error
-    f = open(field_file, 'r')
-    f.readline() #1st line: just pass
-    x_start = float(f.readline().split(sCom, 2)[1]) #2nd line: initial X position [m]; it will not actually be used
-    x_step = float(f.readline().split(sCom, 2)[1]) #3rd line: step vs X [m]
-    x_np = int(f.readline().split(sCom, 2)[1]) #4th line: number of points vs X
-    y_start = float(f.readline().split(sCom, 2)[1]) #5th line: initial Y position [m]; it will not actually be used
-    y_step = float(f.readline().split(sCom, 2)[1]) #6th line: step vs Y [m]
-    y_np = int(f.readline().split(sCom, 2)[1]) #7th line: number of points vs Y
-    z_start = float(f.readline().split(sCom, 2)[1]) #8th line: initial Z position [m]; it will not actually be used
-    z_step = float(f.readline().split(sCom, 2)[1]) #9th line: step vs Z [m]
-    z_np = int(f.readline().split(sCom, 2)[1]) #10th line: number of points vs Z
-    tot_np = x_np*y_np*z_np
+    f = open(field_file, "r")
+    f.readline()  # 1st line: just pass
+    x_start = float(
+        f.readline().split(sCom, 2)[1]
+    )  # 2nd line: initial X position [m]; it will not actually be used
+    x_step = float(f.readline().split(sCom, 2)[1])  # 3rd line: step vs X [m]
+    x_np = int(f.readline().split(sCom, 2)[1])  # 4th line: number of points vs X
+    y_start = float(
+        f.readline().split(sCom, 2)[1]
+    )  # 5th line: initial Y position [m]; it will not actually be used
+    y_step = float(f.readline().split(sCom, 2)[1])  # 6th line: step vs Y [m]
+    y_np = int(f.readline().split(sCom, 2)[1])  # 7th line: number of points vs Y
+    z_start = float(
+        f.readline().split(sCom, 2)[1]
+    )  # 8th line: initial Z position [m]; it will not actually be used
+    z_step = float(f.readline().split(sCom, 2)[1])  # 9th line: step vs Z [m]
+    z_np = int(f.readline().split(sCom, 2)[1])  # 10th line: number of points vs Z
+    tot_np = x_np * y_np * z_np
 
     Bx_array = np.zeros([tot_np])
     By_array = np.zeros([tot_np])
     Bz_array = np.zeros([tot_np])
 
     for i in range(tot_np):
-        curLineParts = f.readline().split('\t')
+        curLineParts = f.readline().split("\t")
         Bx_array[i] = float(curLineParts[0])
         By_array[i] = float(curLineParts[1])
         Bz_array[i] = float(curLineParts[2])
 
     f.close()
 
-    x_array = np.linspace(x_start, x_start + x_step*x_np, num=x_np, endpoint=False)
-    y_array = np.linspace(y_start, y_start + y_step*y_np, num=y_np, endpoint=False)
-    z_array = np.linspace(z_start, z_start + z_step*z_np, num=z_np, endpoint=False)
+    x_array = np.linspace(x_start, x_start + x_step * x_np, num=x_np, endpoint=False)
+    y_array = np.linspace(y_start, y_start + y_step * y_np, num=y_np, endpoint=False)
+    z_array = np.linspace(z_start, z_start + z_step * z_np, num=z_np, endpoint=False)
     return x_array, y_array, z_array, Bx_array, By_array, Bz_array
 
 
 def read_tabular_file(field_file):
     try:
-        field_data = np.loadtxt(field_file, delimiter=' ', unpack = True)
+        field_data = np.loadtxt(field_file, delimiter=" ", unpack=True)
     except:
         try:
-            print( "read_map: try to use delimiter = ','")
-            field_data = np.loadtxt(field_file, delimiter=',', unpack = True)
+            print("read_map: try to use delimiter = ','")
+            field_data = np.loadtxt(field_file, delimiter=",", unpack=True)
         except:
             field_data = np.loadtxt(field_file, unpack=True)
 
@@ -69,9 +76,9 @@ def read_tabular_file(field_file):
         z_array = field_data[0, :]
         By_array = field_data[1, :]
     elif ncols == 3:
-    # spiral undulator or 2D map
-    # So, (z_array, Bx_array, By_array) or  (x_array, z_array, By_array)
-    # BUT we start with spiral undulator.
+        # spiral undulator or 2D map
+        # So, (z_array, Bx_array, By_array) or  (x_array, z_array, By_array)
+        # BUT we start with spiral undulator.
         z_array = field_data[0, :]
         Bx_array = field_data[1, :]
         By_array = field_data[2, :]
@@ -90,7 +97,7 @@ def read_tabular_file(field_file):
             x_array = x_array[:nx_t]
             y_array = y_array[:ny_t:nx_t]
             ny = len(y_array)
-            z_array = z_array[:nz_t:ny*nx_t]
+            z_array = z_array[: nz_t : ny * nx_t]
         else:
             print("wrong coordinates order in the field file (field_map.py)")
     return x_array, y_array, z_array, Bx_array, By_array, Bz_array
@@ -112,7 +119,7 @@ class FieldMap:
             try:
                 self.format = "flat"
                 self.read(field_file)
-            except :
+            except:
                 self.format = "tabular"
                 self.read(field_file)
         else:
@@ -120,12 +127,27 @@ class FieldMap:
 
     def read(self, field_file):
         if self.format == "flat":
-            self.x_arr, self.y_arr, self.z_arr, self.Bx_arr, self.By_arr, self.Bz_arr = read_flat_file(field_file)
+            (
+                self.x_arr,
+                self.y_arr,
+                self.z_arr,
+                self.Bx_arr,
+                self.By_arr,
+                self.Bz_arr,
+            ) = read_flat_file(field_file)
 
         elif self.format == "tabular":
-            self.x_arr, self.y_arr, self.z_arr, self.Bx_arr, self.By_arr, self.Bz_arr = read_tabular_file(field_file)
+            (
+                self.x_arr,
+                self.y_arr,
+                self.z_arr,
+                self.Bx_arr,
+                self.By_arr,
+                self.Bz_arr,
+            ) = read_tabular_file(field_file)
         self.l = self.z_arr[-1] - self.z_arr[0]
-            #return SRWLMagFld3D(locArBx, locArBy, locArBz, xNp, yNp, zNp, xRange, yRange, zRange, 1)
+        # return SRWLMagFld3D(locArBx, locArBy, locArBz, xNp, yNp, zNp, xRange, yRange, zRange, 1)
+
 
 """
 

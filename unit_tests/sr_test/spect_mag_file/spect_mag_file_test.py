@@ -5,10 +5,11 @@ import sys
 import time
 
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-REF_RES_DIR = FILE_DIR + '/ref_results/'
+REF_RES_DIR = FILE_DIR + "/ref_results/"
+
+from spect_mag_file_conf import *
 
 from unit_tests.params import *
-from spect_mag_file_conf import *
 
 
 def test_calculate_radiation(lattice, screen, beam, update_ref_values=False):
@@ -17,17 +18,28 @@ def test_calculate_radiation(lattice, screen, beam, update_ref_values=False):
     screen = calculate_radiation(lattice, screen, beam, accuracy=2)
 
     if update_ref_values:
-        return {'Eph':screen.Eph.tolist(), 'Yph':screen.Yph.tolist(), 'Xph':screen.Xph.tolist(), 'Total':screen.Total.tolist(), 'Sigma':screen.Sigma.tolist(), 'Pi':screen.Pi.tolist()}
-    
-    screen_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+        return {
+            "Eph": screen.Eph.tolist(),
+            "Yph": screen.Yph.tolist(),
+            "Xph": screen.Xph.tolist(),
+            "Total": screen.Total.tolist(),
+            "Sigma": screen.Sigma.tolist(),
+            "Pi": screen.Pi.tolist(),
+        }
 
-    result1 = check_matrix(screen.Eph, screen_ref['Eph'], TOL, assert_info=' Eph - ')
-    result2 = check_matrix(screen.Yph, screen_ref['Yph'], TOL, assert_info=' Yph - ')
-    result3 = check_matrix(screen.Xph, screen_ref['Xph'], TOL, assert_info=' Xph - ')
-    result4 = check_matrix(screen.Total, screen_ref['Total'], TOL, assert_info=' Total - ')
-    result5 = check_matrix(screen.Sigma, screen_ref['Sigma'], TOL, assert_info=' Sigma - ')
-    result6 = check_matrix(screen.Pi, screen_ref['Pi'], TOL, assert_info=' Pi - ')
-    assert check_result(result1+result2+result3+result4+result5+result6)
+    screen_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
+
+    result1 = check_matrix(screen.Eph, screen_ref["Eph"], TOL, assert_info=" Eph - ")
+    result2 = check_matrix(screen.Yph, screen_ref["Yph"], TOL, assert_info=" Yph - ")
+    result3 = check_matrix(screen.Xph, screen_ref["Xph"], TOL, assert_info=" Xph - ")
+    result4 = check_matrix(
+        screen.Total, screen_ref["Total"], TOL, assert_info=" Total - "
+    )
+    result5 = check_matrix(
+        screen.Sigma, screen_ref["Sigma"], TOL, assert_info=" Sigma - "
+    )
+    result6 = check_matrix(screen.Pi, screen_ref["Pi"], TOL, assert_info=" Pi - ")
+    assert check_result(result1 + result2 + result3 + result4 + result5 + result6)
 
 
 def test_radiation_file_and_function(lattice, screen, beam, update_ref_values=False):
@@ -62,18 +74,17 @@ def test_radiation_file_and_function(lattice, screen, beam, update_ref_values=Fa
     # Calculate radiation
     screen_ref = calculate_radiation(lat_m, screen_ref, beam)
 
-
     # function
     und = Undulator(lperiod=lperiod, nperiods=nperiods, Kx=0.0, eid="und")
-    und.mag_field = lambda x, y, z: (0., B0*np.cos(2*np.pi/lperiod*z), 0.)
+    und.mag_field = lambda x, y, z: (0.0, B0 * np.cos(2 * np.pi / lperiod * z), 0.0)
 
     # next, all the same.
 
     lat = MagneticLattice((und))
 
-    #beam = Beam()
-    #beam.E = 17.5  # beam energy in [GeV]
-    #beam.I = 0.1  # beam current in [A]
+    # beam = Beam()
+    # beam.E = 17.5  # beam energy in [GeV]
+    # beam.I = 0.1  # beam current in [A]
 
     screen = Screen()
     screen.z = 1000.0  # distance from the begining of lattice to the screen
@@ -85,12 +96,18 @@ def test_radiation_file_and_function(lattice, screen, beam, update_ref_values=Fa
     # Calculate radiation
     screen = calculate_radiation(lat, screen, beam)
 
-    result1 = check_matrix(screen.Eph, screen_ref.Eph, TOL, assert_info=' Eph - ')
-    result2 = check_matrix(screen.Yph, screen_ref.Yph, TOL, assert_info=' Yph - ')
-    result3 = check_matrix(screen.Xph, screen_ref.Xph, TOL, assert_info=' Xph - ')
-    result4 = check_matrix(screen.Total, screen_ref.Total, tolerance=1.0e-4, assert_info=' Total - ')
-    result5 = check_matrix(screen.Sigma, screen_ref.Sigma, tolerance=1.0e-4, assert_info=' Sigma - ')
-    result6 = check_matrix(screen.Pi, screen_ref.Pi, tolerance=1.0e-4, assert_info=' Pi - ')
+    result1 = check_matrix(screen.Eph, screen_ref.Eph, TOL, assert_info=" Eph - ")
+    result2 = check_matrix(screen.Yph, screen_ref.Yph, TOL, assert_info=" Yph - ")
+    result3 = check_matrix(screen.Xph, screen_ref.Xph, TOL, assert_info=" Xph - ")
+    result4 = check_matrix(
+        screen.Total, screen_ref.Total, tolerance=1.0e-4, assert_info=" Total - "
+    )
+    result5 = check_matrix(
+        screen.Sigma, screen_ref.Sigma, tolerance=1.0e-4, assert_info=" Sigma - "
+    )
+    result6 = check_matrix(
+        screen.Pi, screen_ref.Pi, tolerance=1.0e-4, assert_info=" Pi - "
+    )
     assert check_result(result1 + result2 + result3 + result4 + result5 + result6)
 
 
@@ -106,7 +123,7 @@ def test_radiation_from_bm(lattice, screen, beam, update_ref_values=False):
     beam.xp = phi / 2  # initial angle x'
     beam.x = -x_off  # initial offset
 
-    By = 1.  # T - amplitude of vertical magnetic field.
+    By = 1.0  # T - amplitude of vertical magnetic field.
 
     b = Undulator(lperiod=0.10, nperiods=10, eid="und")
     b.mag_field = lambda x, y, z: (0, By, 0)
@@ -122,50 +139,58 @@ def test_radiation_from_bm(lattice, screen, beam, update_ref_values=False):
     screen.end_energy = 10000  # [eV], ending photon energy
     screen.num_energy = 100  # number of energy points[eV]
 
-
     screen = calculate_radiation(lattice, screen, beam, accuracy=6)
 
     x = screen.beam_traj.x(0)[::50]
     z = screen.beam_traj.z(0)[::50]
 
     if update_ref_values:
-        return {'Eph': screen.Eph.tolist(), 'Yph': screen.Yph.tolist(), 'Xph': screen.Xph.tolist(),
-                'Total': screen.Total.tolist(), 'Sigma': screen.Sigma.tolist(), 'Pi': screen.Pi.tolist(),
-                "x": x.tolist(), "z": z.tolist()}
+        return {
+            "Eph": screen.Eph.tolist(),
+            "Yph": screen.Yph.tolist(),
+            "Xph": screen.Xph.tolist(),
+            "Total": screen.Total.tolist(),
+            "Sigma": screen.Sigma.tolist(),
+            "Pi": screen.Pi.tolist(),
+            "x": x.tolist(),
+            "z": z.tolist(),
+        }
 
-    screen_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    screen_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result1 = check_matrix(screen.Eph, screen_ref['Eph'], TOL, assert_info=' Eph - ')
-    result2 = check_matrix(screen.Yph, screen_ref['Yph'], TOL, assert_info=' Yph - ')
-    result3 = check_matrix(screen.Xph, screen_ref['Xph'], TOL, assert_info=' Xph - ')
-    result4 = check_matrix(screen.Total, screen_ref['Total'], TOL, assert_info=' Total - ')
-    result5 = check_matrix(screen.Sigma, screen_ref['Sigma'], TOL, assert_info=' Sigma - ')
-    result6 = check_matrix(screen.Pi, screen_ref['Pi'], TOL, assert_info=' Pi - ')
+    result1 = check_matrix(screen.Eph, screen_ref["Eph"], TOL, assert_info=" Eph - ")
+    result2 = check_matrix(screen.Yph, screen_ref["Yph"], TOL, assert_info=" Yph - ")
+    result3 = check_matrix(screen.Xph, screen_ref["Xph"], TOL, assert_info=" Xph - ")
+    result4 = check_matrix(
+        screen.Total, screen_ref["Total"], TOL, assert_info=" Total - "
+    )
+    result5 = check_matrix(
+        screen.Sigma, screen_ref["Sigma"], TOL, assert_info=" Sigma - "
+    )
+    result6 = check_matrix(screen.Pi, screen_ref["Pi"], TOL, assert_info=" Pi - ")
 
-    result7 = check_matrix(x, screen_ref['x'], TOL, assert_info=' traj X - ')
-    result8 = check_matrix(z, screen_ref['z'], TOL, assert_info=' traj Z - ')
+    result7 = check_matrix(x, screen_ref["x"], TOL, assert_info=" traj X - ")
+    result8 = check_matrix(z, screen_ref["z"], TOL, assert_info=" traj Z - ")
 
-
-    assert check_result(result1 + result2 + result3 + result4 + result5 + result6 + result7 + result8)
+    assert check_result(
+        result1 + result2 + result3 + result4 + result5 + result6 + result7 + result8
+    )
 
 
 def setup_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### SPECT_MAG_FILE START ###\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### SPECT_MAG_FILE START ###\n\n")
     f.close()
 
 
 def teardown_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### SPECT_MAG_FILE END ###\n\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### SPECT_MAG_FILE END ###\n\n\n")
     f.close()
 
 
 def setup_function(function):
-    
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
     f.write(function.__name__)
     f.close()
 
@@ -173,24 +198,26 @@ def setup_function(function):
 
 
 def teardown_function(function):
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write(' execution time is ' + '{:.3f}'.format(time.time() - pytest.t_start) + ' sec\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write(
+        " execution time is "
+        + "{:.3f}".format(time.time() - pytest.t_start)
+        + " sec\n\n"
+    )
     f.close()
 
 
 @pytest.mark.update
 def test_update_ref_values(lattice, screen, beam, cmdopt):
-    
     update_functions = []
-    update_functions.append('test_calculate_radiation')
-    update_functions.append('test_radiation_file_and_function')
+    update_functions.append("test_calculate_radiation")
+    update_functions.append("test_radiation_file_and_function")
     update_functions.append("test_radiation_from_bm")
 
-    
     if cmdopt in update_functions:
         result = eval(cmdopt)(lattice, screen, beam, True)
-        
-        if os.path.isfile(REF_RES_DIR + cmdopt + '.json'):
-            os.rename(REF_RES_DIR + cmdopt + '.json', REF_RES_DIR + cmdopt + '.old')
-        
-        json_save(result, REF_RES_DIR + cmdopt + '.json')
+
+        if os.path.isfile(REF_RES_DIR + cmdopt + ".json"):
+            os.rename(REF_RES_DIR + cmdopt + ".json", REF_RES_DIR + cmdopt + ".old")
+
+        json_save(result, REF_RES_DIR + cmdopt + ".json")

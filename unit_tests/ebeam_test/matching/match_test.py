@@ -5,23 +5,26 @@ import sys
 import time
 
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-REF_RES_DIR = FILE_DIR + '/ref_results/'
+REF_RES_DIR = FILE_DIR + "/ref_results/"
+
+from match_conf import *
 
 from unit_tests.params import *
-from match_conf import *
 
 
 def test_lattice_transfer_map(lattice, lattice_inj=None, update_ref_values=False):
     """R maxtrix calculation test"""
 
     r_matrix = lattice_transfer_map(lattice, 0.0)
-    
+
     if update_ref_values:
         return numpy2json(r_matrix)
-    
-    r_matrix_ref = json2numpy(json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json'))
-    
-    result = check_matrix(r_matrix, r_matrix_ref, TOL, assert_info=' r_matrix - ')
+
+    r_matrix_ref = json2numpy(
+        json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
+    )
+
+    result = check_matrix(r_matrix, r_matrix_ref, TOL, assert_info=" r_matrix - ")
     assert check_result(result)
 
 
@@ -36,15 +39,15 @@ def test_twiss(lattice, lattice_inj=None, update_ref_values=False):
     tws0.E = 0.005071
 
     tws = twiss(lattice, tws0, nPoints=20)
-    
+
     tws = obj2dict(tws)
-    
+
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
-    
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws - ')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
+
+    result = check_dict(tws, tws_ref, TOL, "absotute", assert_info=" tws - ")
     assert check_result(result)
 
 
@@ -62,7 +65,6 @@ def test_solenoid_match(lattice, lattice_inj=None, update_ref_values=False):
     constr = {m_sol: {"beta_x": 10, "beta_y": 10}}
     vars = [sol1]
 
-
     match(lattice, constr, vars, tws0, verbose=False)
 
     tws = twiss(lattice, tws0, nPoints=20)
@@ -75,9 +77,11 @@ def test_solenoid_match(lattice, lattice_inj=None, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws after matching - ')
+    result = check_dict(
+        tws, tws_ref, TOL, "absotute", assert_info=" tws after matching - "
+    )
     assert check_result(result)
 
 
@@ -106,9 +110,11 @@ def test_quad_match(lattice, lattice_inj=None, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws after matching - ')
+    result = check_dict(
+        tws, tws_ref, TOL, "absotute", assert_info=" tws after matching - "
+    )
     assert check_result(result)
 
 
@@ -127,7 +133,6 @@ def test_bend_k_match(lattice, lattice_inj=None, update_ref_values=False):
     constr = {end: {"beta_x": 10, "beta_y": 10}}
     vars = [b1, b2]
 
-
     res = match(lattice, constr, vars, tws0, verbose=False)
     tws = twiss(lattice, tws0, nPoints=20)
 
@@ -138,9 +143,11 @@ def test_bend_k_match(lattice, lattice_inj=None, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws after matching - ')
+    result = check_dict(
+        tws, tws_ref, TOL, "absotute", assert_info=" tws after matching - "
+    )
     assert check_result(result)
 
 
@@ -169,10 +176,13 @@ def test_bend_angle_match(lattice, lattice_inj=None, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws after matching - ')
+    result = check_dict(
+        tws, tws_ref, TOL, "absotute", assert_info=" tws after matching - "
+    )
     assert check_result(result)
+
 
 def test_generate_parray_match(lattice, lattice_inj=None, update_ref_values=False):
     """After matching R maxtrix calculcation test"""
@@ -183,12 +193,38 @@ def test_generate_parray_match(lattice, lattice_inj=None, update_ref_values=Fals
     tws0.alpha_y = -55.8
     tws0.E = 0.005071
     np.random.seed(10)
-    p_array = generate_parray(chirp=0.0, charge=5e-9, nparticles=20000, energy=tws0.E, tws=tws0)
+    p_array = generate_parray(
+        chirp=0.0, charge=5e-9, nparticles=20000, energy=tws0.E, tws=tws0
+    )
     tw = get_envelope(p_array)
-    res1 = check_value(tw.alpha_x, tws0.alpha_x, tolerance=1.0e-5, tolerance_type='relative', assert_info='alpha_x')
-    res2 = check_value(tw.alpha_y, tws0.alpha_y, tolerance=1.0e-5, tolerance_type='relative', assert_info='alpha_y')
-    res3 = check_value(tw.beta_x, tws0.beta_x, tolerance=1.0e-5, tolerance_type='relative', assert_info='beta_x')
-    res4 = check_value(tw.beta_y, tws0.beta_y, tolerance=1.0e-5, tolerance_type='relative', assert_info='beta_y')
+    res1 = check_value(
+        tw.alpha_x,
+        tws0.alpha_x,
+        tolerance=1.0e-5,
+        tolerance_type="relative",
+        assert_info="alpha_x",
+    )
+    res2 = check_value(
+        tw.alpha_y,
+        tws0.alpha_y,
+        tolerance=1.0e-5,
+        tolerance_type="relative",
+        assert_info="alpha_y",
+    )
+    res3 = check_value(
+        tw.beta_x,
+        tws0.beta_x,
+        tolerance=1.0e-5,
+        tolerance_type="relative",
+        assert_info="beta_x",
+    )
+    res4 = check_value(
+        tw.beta_y,
+        tws0.beta_y,
+        tolerance=1.0e-5,
+        tolerance_type="relative",
+        assert_info="beta_y",
+    )
 
     assert check_result([res1, res2, res3, res4])
 
@@ -207,11 +243,12 @@ def test_inj_lattice(lattice, lattice_inj, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, TOL, 'absotute', assert_info=' tws in inj - ')
+    result = check_dict(tws, tws_ref, TOL, "absotute", assert_info=" tws in inj - ")
 
     assert check_result(result)
+
 
 def test_beam_matching(lattice, lattice_inj, update_ref_values=False):
     """After matching R maxtrix calculcation test"""
@@ -223,20 +260,37 @@ def test_beam_matching(lattice, lattice_inj, update_ref_values=False):
     tws0.alpha_y = -0.8
 
     np.random.seed(10)
-    p_array = generate_parray(chirp=0.0, charge=5e-9, nparticles=20000, energy=tws0.E, tws=tws0)
-    ids = ['QI.46.I1', 'QI.47.I1', 'QI.50.I1', 'QI.52.I1']
+    p_array = generate_parray(
+        chirp=0.0, charge=5e-9, nparticles=20000, energy=tws0.E, tws=tws0
+    )
+    ids = ["QI.46.I1", "QI.47.I1", "QI.50.I1", "QI.52.I1"]
     vars = [e for e in lattice_inj.sequence if e.id in ids]
     beta_x = 2.8317292131504344
     beta_y = 6.651738960640371
     alpha_x = 0.2919751990869057
     alpha_y = -1.9571969991015152
-    end_marker = [e for e in lattice_inj.sequence if e.id == 'STSUB.62.I1'][0]
+    end_marker = [e for e in lattice_inj.sequence if e.id == "STSUB.62.I1"][0]
 
-    constr = {end_marker: {'beta_x': beta_x, 'beta_y': beta_y,
-                               "alpha_x": alpha_x, "alpha_y": alpha_y}}
+    constr = {
+        end_marker: {
+            "beta_x": beta_x,
+            "beta_y": beta_y,
+            "alpha_x": alpha_x,
+            "alpha_y": alpha_y,
+        }
+    }
 
     navi = Navigator(lattice_inj)
-    res = match_beam(lattice_inj, constr, vars, p_array, navi, verbose=True, max_iter=15, method='simplex')
+    res = match_beam(
+        lattice_inj,
+        constr,
+        vars,
+        p_array,
+        navi,
+        verbose=True,
+        max_iter=15,
+        method="simplex",
+    )
     navi.reset_position()
     for i, q in enumerate(vars):
         q.k1 = res[i]
@@ -247,29 +301,27 @@ def test_beam_matching(lattice, lattice_inj, update_ref_values=False):
     if update_ref_values:
         return tws
 
-    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + '.json')
+    tws_ref = json_read(REF_RES_DIR + sys._getframe().f_code.co_name + ".json")
 
-    result = check_dict(tws, tws_ref, 1e-6, 'absotute', assert_info=' tws in inj - ')
+    result = check_dict(tws, tws_ref, 1e-6, "absotute", assert_info=" tws in inj - ")
 
     assert check_result(result)
 
-def setup_module(module):
 
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### DBA START ###\n\n')
+def setup_module(module):
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### DBA START ###\n\n")
     f.close()
 
 
 def teardown_module(module):
-
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write('### DBA END ###\n\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write("### DBA END ###\n\n\n")
     f.close()
 
 
 def setup_function(function):
-    
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
     f.write(function.__name__)
     f.close()
 
@@ -277,28 +329,31 @@ def setup_function(function):
 
 
 def teardown_function(function):
-    f = open(pytest.TEST_RESULTS_FILE, 'a')
-    f.write(' execution time is ' + '{:.3f}'.format(time.time() - pytest.t_start) + ' sec\n\n')
+    f = open(pytest.TEST_RESULTS_FILE, "a")
+    f.write(
+        " execution time is "
+        + "{:.3f}".format(time.time() - pytest.t_start)
+        + " sec\n\n"
+    )
     f.close()
-    
+
 
 @pytest.mark.update
 def test_update_ref_values(lattice, lattice_inj, cmdopt):
-    
     update_functions = []
-    update_functions.append('test_lattice_transfer_map')
-    update_functions.append('test_twiss')
-    update_functions.append('test_solenoid_match')
-    update_functions.append('test_quad_match')
-    update_functions.append('test_bend_k_match')
-    update_functions.append('test_bend_angle_match')
-    update_functions.append('test_inj_lattice')
-    update_functions.append('test_beam_matching')
+    update_functions.append("test_lattice_transfer_map")
+    update_functions.append("test_twiss")
+    update_functions.append("test_solenoid_match")
+    update_functions.append("test_quad_match")
+    update_functions.append("test_bend_k_match")
+    update_functions.append("test_bend_angle_match")
+    update_functions.append("test_inj_lattice")
+    update_functions.append("test_beam_matching")
 
     if cmdopt in update_functions:
         result = eval(cmdopt)(lattice, lattice_inj, True)
-        
-        if os.path.isfile(REF_RES_DIR + cmdopt + '.json'):
-            os.rename(REF_RES_DIR + cmdopt + '.json', REF_RES_DIR + cmdopt + '.old')
-        
-        json_save(result, REF_RES_DIR + cmdopt + '.json')
+
+        if os.path.isfile(REF_RES_DIR + cmdopt + ".json"):
+            os.rename(REF_RES_DIR + cmdopt + ".json", REF_RES_DIR + cmdopt + ".old")
+
+        json_save(result, REF_RES_DIR + cmdopt + ".json")

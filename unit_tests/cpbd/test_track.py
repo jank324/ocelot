@@ -1,15 +1,16 @@
 import copy
 
-import pytest
 import numpy as np
+import pytest
 
-from ocelot.cpbd.io import ParameterScanFile
-from ocelot.cpbd.track import ParameterScanner
-from ocelot.cpbd.optics import Navigator
-from ocelot.cpbd.magnetic_lattice import MagneticLattice
-from ocelot.cpbd.elements import SBend, Marker
-from ocelot.cpbd.transformations import SecondTM
 from ocelot.cpbd.beam import ParticleArray
+from ocelot.cpbd.elements import Marker, SBend
+from ocelot.cpbd.io import ParameterScanFile
+from ocelot.cpbd.magnetic_lattice import MagneticLattice
+from ocelot.cpbd.optics import Navigator
+from ocelot.cpbd.track import ParameterScanner
+from ocelot.cpbd.transformations import SecondTM
+
 
 def assert_parray_equality(first, second):
     np.testing.assert_equal(first.E, second.E)
@@ -17,10 +18,12 @@ def assert_parray_equality(first, second):
     np.testing.assert_equal(first.q_array, second.q_array)
     np.testing.assert_equal(first.rparticles, second.rparticles)
 
+
 PARAMETER_NAME = "parameter-name"
 MARKER_NAMES = ["pytest-marker-name-1", "pytest-marker-name-2"]
 PARAMETER_VALUES = [0.1, 0.3]
 FILENAME = "test.hdf5"
+
 
 @pytest.fixture
 def navigator():
@@ -31,30 +34,36 @@ def navigator():
 
     return navi
 
+
 @pytest.fixture()
 def pscanner(navigator):
     parray0s = [ParticleArray.random(15), ParticleArray.random(10)]
 
     markers = [ele for ele in navigator.lat.sequence if isinstance(ele, Marker)]
 
-    pscanner = ParameterScanner(navigator,
-                             PARAMETER_VALUES,
-                             parray0s,
-                             parameter_name=PARAMETER_NAME,
-                             markers=markers)
+    pscanner = ParameterScanner(
+        navigator,
+        PARAMETER_VALUES,
+        parray0s,
+        parameter_name=PARAMETER_NAME,
+        markers=markers,
+    )
 
     return pscanner
+
 
 def test_ParameterScanner_init(navigator):
     parray0s = [ParticleArray.random(15), ParticleArray.random(10)]
 
     markers = [ele for ele in navigator.lat.sequence if isinstance(ele, Marker)]
 
-    pscanner = ParameterScanner(navigator,
-                             PARAMETER_VALUES,
-                             parray0s,
-                             parameter_name=PARAMETER_NAME,
-                             markers=markers)
+    pscanner = ParameterScanner(
+        navigator,
+        PARAMETER_VALUES,
+        parray0s,
+        parameter_name=PARAMETER_NAME,
+        markers=markers,
+    )
 
     assert pscanner.navigator == navigator
     assert pscanner.parameter_values == PARAMETER_VALUES
@@ -63,9 +72,7 @@ def test_ParameterScanner_init(navigator):
     assert pscanner.markers == markers
 
     # initialised with only a single parray + default init.:
-    pscanner = ParameterScanner(navigator,
-                             PARAMETER_VALUES,
-                             parray0s[0])
+    pscanner = ParameterScanner(navigator, PARAMETER_VALUES, parray0s[0])
 
     assert pscanner.markers == []
     assert pscanner.parameter_name == "parameter"
@@ -79,16 +86,20 @@ def test_throws_when_bad_length_mismatch_init(navigator):
     with pytest.raises(ValueError):
         pscanner = ParameterScanner(navigator, paramvals, parray0s)
 
+
 def test_njobs(pscanner):
     assert pscanner.njobs == 2
+
 
 def test_ParameterScanner_prepare_navigator(pscanner, monkeypatch):
     # Assert its not equal, set deepcopy to simply not do a copy temporarily,
     # and then assert equality. this more or less guarantees prepare_navigator
     # works relatively easily.
     assert pscanner.prepare_navigator() != pscanner.navigator
+
     def nocopy(arg):
         return arg
+
     monkeypatch.setattr(copy, "deepcopy", nocopy)
     assert pscanner.prepare_navigator() == pscanner.navigator
 
@@ -111,6 +122,7 @@ def test_ParameterScanner_generate_unique_navigators_with_parray0s(pscanner):
 
     assert_parray_equality(parray0s[0], pscanner.parray0[0])
     assert_parray_equality(parray0s[1], pscanner.parray0[1])
+
 
 def test_ParameterScanner_prepare_track_payloads(pscanner):
     navis, parray0s = pscanner.generate_unique_navigators_with_parray0s()
@@ -142,6 +154,7 @@ def test_ParameterScanner_prepare_track_payloads(pscanner):
 
     assert payloads[0].kwargs == None
     assert payloads[1].kwargs == None
+
 
 def test_ParameterScanner_scan(pscanner, tmp_path):
     pscanner.scan(tmp_path / FILENAME, nproc=4)

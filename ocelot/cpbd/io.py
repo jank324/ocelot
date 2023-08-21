@@ -1,29 +1,32 @@
-__author__ = 'Sergey Tomin'
+__author__ = "Sergey Tomin"
 """
 module contains lat2input function which creates python input string
 (ocelot lattice) for a lattice object
 author sergey.tomin
 """
-import os
 import logging
-from typing import Union, List, Tuple, Optional, Any, Iterable, Type
-from types import TracebackType
+import os
 from pathlib import Path
+from types import TracebackType
+from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 
-
-from ocelot.adaptors.astra2ocelot import (astraBeam2particleArray,
-                                          particleArray2astraBeam)
-from ocelot.adaptors.csrtrack2ocelot import (csrtrackBeam2particleArray,
-                                             particleArray2csrtrackBeam)
+from ocelot.adaptors.astra2ocelot import (
+    astraBeam2particleArray,
+    particleArray2astraBeam,
+)
+from ocelot.adaptors.csrtrack2ocelot import (
+    csrtrackBeam2particleArray,
+    particleArray2csrtrackBeam,
+)
 
 try:
     from ocelot.adaptors.pmd import load_pmd, particle_array_to_particle_group
 except ImportError:
     pass
 
-from ocelot.cpbd.beam import ParticleArray, Twiss, Beam
+from ocelot.cpbd.beam import Beam, ParticleArray, Twiss
 
 try:
     from mpi4py import MPI
@@ -43,7 +46,7 @@ def is_an_mpi_process():
 
 
 class HDF5FileWithMaybeMPI(h5py.File):
-    def __init__ (self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         if is_an_mpi_process():
             _logger.debug("Opening h5py with mpi enabled")
             kwargs.update({"driver": "mpio", "comm": MPI.COMM_WORLD})
@@ -58,9 +61,12 @@ class ParameterScanFile:
     def __enter__(self):
         return self
 
-    def __exit__(self, exctype: Optional[Type[BaseException]],
-                 excinst: Optional[BaseException],
-                 exctb: Optional[TracebackType]) -> bool:
+    def __exit__(
+        self,
+        exctype: Optional[Type[BaseException]],
+        excinst: Optional[BaseException],
+        exctb: Optional[TracebackType],
+    ) -> bool:
         self.close()
 
     def close(self):
@@ -72,7 +78,9 @@ class ParameterScanFile:
 
     def new_run_output(self, pval, parray0, marker_names):
         next_run_name = self.next_run_name()
-        self._initialise_one_root_level_group(next_run_name, pval, parray0, marker_names)
+        self._initialise_one_root_level_group(
+            next_run_name, pval, parray0, marker_names
+        )
         return next_run_name
 
     def _write_parray(self, scan_index, parray_group_name, parray):
@@ -158,15 +166,14 @@ class ParameterScanFile:
         for parameter, parray0 in zip(parameter_values, parray0s):
             self.new_run_output(parameter, parray0, marker_names)
 
-    def _initialise_one_root_level_group(self, run_name: str,
-                                         parameter: Any,
-                                         parray0: ParticleArray,
-                                         marker_names) -> None:
+    def _initialise_one_root_level_group(
+        self, run_name: str, parameter: Any, parray0: ParticleArray, marker_names
+    ) -> None:
         """Initialises a group of the kind found at the root level of the file and
         everything within it."""
         group = self._hdf.create_group(run_name)
         g0 = group.create_group("parray0")
-         # init with specific parray0 in case they each have different lengths.
+        # init with specific parray0 in case they each have different lengths.
         self._init_h5_parray_group(g0, parray0)
         g1 = group.create_group("parray1")
         self._init_h5_parray_group(g1, parray0)
@@ -181,8 +188,9 @@ class ParameterScanFile:
     def _run_index_to_name(run_index: int) -> str:
         return f"run-{run_index}"
 
-    def _write_output(self, hdf, run_name: str, parray0: ParticleArray, parray1:
-                      ParticleArray) -> None:
+    def _write_output(
+        self, hdf, run_name: str, parray0: ParticleArray, parray1: ParticleArray
+    ) -> None:
         # run_index provides where the particle array will be written.
         self._write_beam_to_group(hdf[f"{run_name}/parray0"], parray0)
         self._write_beam_to_group(hdf[f"{run_name}/parray1"], parray1)
@@ -190,11 +198,12 @@ class ParameterScanFile:
     @staticmethod
     def _init_h5_parray_group(group, parray0: ParticleArray) -> None:
         # Have to explicitly set the dtypes.
-        group.create_dataset("rparticles",
-                             shape=parray0.rparticles.shape,
-                             dtype=parray0.rparticles.dtype)
-        group.create_dataset("q_array", shape=parray0.q_array.shape,
-                             dtype=parray0.q_array.dtype)
+        group.create_dataset(
+            "rparticles", shape=parray0.rparticles.shape, dtype=parray0.rparticles.dtype
+        )
+        group.create_dataset(
+            "q_array", shape=parray0.q_array.shape, dtype=parray0.q_array.dtype
+        )
         group.create_dataset("E", shape=(), dtype=type(parray0.E))
         group.create_dataset("s", shape=(), dtype=type(parray0.s))
 
@@ -208,14 +217,19 @@ class ParameterScanFile:
 
 def h5py_group_to_parray(group):
     parray = ParticleArray()
-    for key in 'E', 'q_array', 'rparticles', 's':
+    for key in "E", "q_array", "rparticles", "s":
         setattr(parray, key, group[key][()])
     return parray
 
+
 def save_particle_array2npz(filename, p_array):
-    np.savez_compressed(filename, rparticles=p_array.rparticles,
-                        q_array=p_array.q_array,
-                        E=p_array.E, s=p_array.s)
+    np.savez_compressed(
+        filename,
+        rparticles=p_array.rparticles,
+        q_array=p_array.q_array,
+        E=p_array.E,
+        s=p_array.s,
+    )
 
 
 def load_particle_array_from_npz(filename, print_params=False):
@@ -254,7 +268,11 @@ def load_particle_array(filename, print_params=False):
     elif file_extension == ".h5":
         parray = load_pmd(filename)
     else:
-        raise Exception("Unknown format of the beam file: " + file_extension + " but must be *.ast, *fmt1 or *.npz ")
+        raise Exception(
+            "Unknown format of the beam file: "
+            + file_extension
+            + " but must be *.ast, *fmt1 or *.npz "
+        )
 
     if print_params:
         print(parray)
@@ -284,4 +302,8 @@ def save_particle_array(filename, p_array):
         particle_array_to_particle_group(p_array).write(filename)
     else:
         particle_array_to_particle_group(p_array).write(filename)
-        raise Exception("Unknown format of the beam file: " + file_extension + " but must be *.ast, *.fmt1 or *.npz")
+        raise Exception(
+            "Unknown format of the beam file: "
+            + file_extension
+            + " but must be *.ast, *.fmt1 or *.npz"
+        )

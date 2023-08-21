@@ -8,11 +8,14 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form_TunePanel(object):
     def setupUi(self, Form_TunePanel):
         Form_TunePanel.setObjectName("Form_TunePanel")
         Form_TunePanel.resize(285, 70)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Form_TunePanel.sizePolicy().hasHeightForWidth())
@@ -20,8 +23,12 @@ class Ui_Form_TunePanel(object):
         Form_TunePanel.setMinimumSize(QtCore.QSize(285, 70))
         Form_TunePanel.setMaximumSize(QtCore.QSize(285, 70))
         Form_TunePanel.setAutoFillBackground(False)
-        Form_TunePanel.setStyleSheet(".QWidget {background-color: rgb(238, 238, 236); border-top: 2px solid rgb(255, 255, 255);}")
-        Form_TunePanel.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
+        Form_TunePanel.setStyleSheet(
+            ".QWidget {background-color: rgb(238, 238, 236); border-top: 2px solid rgb(255, 255, 255);}"
+        )
+        Form_TunePanel.setLocale(
+            QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
+        )
         self.layoutWidget = QtWidgets.QWidget(Form_TunePanel)
         self.layoutWidget.setGeometry(QtCore.QRect(0, 0, 288, 69))
         self.layoutWidget.setObjectName("layoutWidget")
@@ -34,10 +41,14 @@ class Ui_Form_TunePanel(object):
         self.horizontalLayout_6.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.horizontalLayout_6.setSpacing(0)
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
-        spacerItem = QtWidgets.QSpacerItem(5, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            5, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_6.addItem(spacerItem)
         self.check = QtWidgets.QCheckBox(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.check.sizePolicy().hasHeightForWidth())
@@ -50,7 +61,9 @@ class Ui_Form_TunePanel(object):
         self.check.setObjectName("check")
         self.horizontalLayout_6.addWidget(self.check)
         self.label_f = QtWidgets.QLabel(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_f.sizePolicy().hasHeightForWidth())
@@ -70,10 +83,14 @@ class Ui_Form_TunePanel(object):
         self.factor.setProperty("value", 0.01)
         self.factor.setObjectName("factor")
         self.horizontalLayout_6.addWidget(self.factor)
-        spacerItem1 = QtWidgets.QSpacerItem(15, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            15, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_6.addItem(spacerItem1)
         self.xbutton = QtWidgets.QPushButton(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.xbutton.sizePolicy().hasHeightForWidth())
@@ -87,10 +104,14 @@ class Ui_Form_TunePanel(object):
         self.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem2 = QtWidgets.QSpacerItem(5, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            5, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem2)
         self.label_c = QtWidgets.QLabel(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_c.sizePolicy().hasHeightForWidth())
@@ -101,7 +122,9 @@ class Ui_Form_TunePanel(object):
         self.label_c.setObjectName("label_c")
         self.horizontalLayout.addWidget(self.label_c)
         self.curval = QtWidgets.QDoubleSpinBox(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.curval.sizePolicy().hasHeightForWidth())
@@ -114,10 +137,14 @@ class Ui_Form_TunePanel(object):
         self.curval.setSingleStep(0.01)
         self.curval.setObjectName("curval")
         self.horizontalLayout.addWidget(self.curval)
-        spacerItem3 = QtWidgets.QSpacerItem(11, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            11, 23, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem3)
         self.label_o = QtWidgets.QLabel(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_o.sizePolicy().hasHeightForWidth())
@@ -128,14 +155,18 @@ class Ui_Form_TunePanel(object):
         self.label_o.setObjectName("label_o")
         self.horizontalLayout.addWidget(self.label_o)
         self.oldval = QtWidgets.QLineEdit(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.oldval.sizePolicy().hasHeightForWidth())
         self.oldval.setSizePolicy(sizePolicy)
         self.oldval.setMinimumSize(QtCore.QSize(73, 23))
         self.oldval.setMaximumSize(QtCore.QSize(73, 23))
-        self.oldval.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.oldval.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.oldval.setReadOnly(True)
         self.oldval.setObjectName("oldval")
         self.horizontalLayout.addWidget(self.oldval)
@@ -155,10 +186,10 @@ class Ui_Form_TunePanel(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Form_TunePanel = QtWidgets.QWidget()
     ui = Ui_Form_TunePanel()
     ui.setupUi(Form_TunePanel)
     Form_TunePanel.show()
     sys.exit(app.exec_())
-

@@ -3,10 +3,12 @@ module for misalignment error generation
 Sergey Tomin
 """
 import copy
-from numpy.random import normal
-import scipy.stats as stats
+
 import numpy as np
-from ocelot.cpbd.elements import Sextupole, Quadrupole, SBend, RBend, Bend
+import scipy.stats as stats
+from numpy.random import normal
+
+from ocelot.cpbd.elements import Bend, Quadrupole, RBend, SBend, Sextupole
 from ocelot.cpbd.magnetic_lattice import MagneticLattice
 
 
@@ -17,8 +19,8 @@ class Errors:
 
 
 def tgauss(mu=0, sigma=1, trunc=2, num=1):
-    lower = -sigma*trunc
-    upper = sigma*trunc
+    lower = -sigma * trunc
+    upper = sigma * trunc
     X = stats.truncnorm((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
     if num == 1:
         x = X.rvs(1)[0]
@@ -31,35 +33,36 @@ def tgauss_old(mu=0, sigma=1, trunc=2):
     if sigma == 0:
         return mu
     err = normal(mu, sigma, size=50)
-    err_ok = err[abs(err) < trunc*sigma]
+    err_ok = err[abs(err) < trunc * sigma]
     return err_ok[0]
 
 
 def create_copy(lattice, nsuperperiods):
-
     lat_copy_seg = []
     for i in range(nsuperperiods):
-
         for n, elem in enumerate(lattice.sequence):
             lat_copy_seg.append(copy.deepcopy(elem))
             if lat_copy_seg[-1].id is None:
-                lat_copy_seg[-1].id = lat_copy_seg[-1].type[:2] + "_sp" + str(i) + "_" + str(n)
+                lat_copy_seg[-1].id = (
+                    lat_copy_seg[-1].type[:2] + "_sp" + str(i) + "_" + str(n)
+                )
             else:
                 if elem.__class__ != Sextupole:
-                    lat_copy_seg[-1].id = lat_copy_seg[-1].id + "_sp" + str(i) + "_" + str(n)
+                    lat_copy_seg[-1].id = (
+                        lat_copy_seg[-1].id + "_sp" + str(i) + "_" + str(n)
+                    )
     return MagneticLattice(lat_copy_seg, method=lattice.method)
 
 
 def errors_seed(lattice, er_list):
-
-    #lat_seq_err = create_copy(lattice, nsuperperiods = nsuperperiods)
+    # lat_seq_err = create_copy(lattice, nsuperperiods = nsuperperiods)
     dx = []
     dy = []
     dtilt = []
     the_same = 0
-    elem_dx = 0.
-    elem_dy = 0.
-    elem_dtilt = 0.
+    elem_dx = 0.0
+    elem_dy = 0.0
+    elem_dtilt = 0.0
     misal = {}
     for elem in lattice.sequence:
         elem.dx = 0
@@ -88,7 +91,7 @@ def errors_seed(lattice, er_list):
             else:
                 elem.dtilt = tgauss(sigma=er_list[elem.__class__]["dtilt"])
 
-        misal[elem.id] = {"dx": elem.dx, "dy": elem.dy, "dtilt":elem.dtilt}
+        misal[elem.id] = {"dx": elem.dx, "dy": elem.dy, "dtilt": elem.dtilt}
         dx = np.append(dx, elem.dx)
         dy = np.append(dy, elem.dy)
         dtilt = np.append(dtilt, elem.dtilt)
