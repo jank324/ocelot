@@ -404,31 +404,26 @@ class ElegantLatticeConverter:
                 # replace element by Drift (if it has L) or skip
                 else:
                     elements_list[elem] = None
-                    print_skiped = True
+                    print_skipped = True
 
                     for data in param:
                         if data[:2] == "L=":
                             val = self.convert_val(data[2:], constants, elem)
 
                             elements_list[elem] = Drift(eid=elem, l=val)
-                            print_skiped = False
+                            print_skipped = False
                             break
 
-                    if print_skiped:
+                    if print_skipped:
                         print(
-                            "WARNING! Unknown element",
-                            elem,
-                            "with type",
-                            param[0],
-                            "was skiped",
+                            f"WARNING! Unknown element {elem} of type {param[0]} was"
+                            " skipped"
                         )
+
                     else:
                         print(
-                            "WARNING! Unknown element",
-                            elem,
-                            "with type",
-                            param[0],
-                            "was changed by Drift",
+                            f"WARNING! Unknown element {elem} of type {param[0]} was"
+                            " changed to Drift"
                         )
 
             if elements_list[elem] is not None:
