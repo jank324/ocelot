@@ -50,7 +50,7 @@ def check_value(
     """Value with reference value check function
 
     if relative_tolerance='relative' then tolerance is relative (this is default value)
-                                     if both numbers less than numerical zero then return None
+        if both numbers less than numerical zero then return None
     if relative_tolerance='absolute' then tolerance is absolute
     there is no tolerance for string values
     """

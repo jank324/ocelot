@@ -6,9 +6,21 @@ import sys
 
 import numpy as np
 
-from ocelot.cpbd.elements import *
-from ocelot.cpbd.io import *
-from ocelot.cpbd.magnetic_lattice import *
+from ocelot.cpbd.elements import (
+    Cavity,
+    Drift,
+    Hcor,
+    Marker,
+    Matrix,
+    Monitor,
+    Quadrupole,
+    RBend,
+    SBend,
+    Sextupole,
+    Solenoid,
+    Undulator,
+    Vcor,
+)
 
 
 class ElegantLatticeConverter:
@@ -20,8 +32,9 @@ class ElegantLatticeConverter:
     def init_convert_matrix(self):
         """
         Init Elegant -> Ocelot convertion matrix
-        in case of dict has list, e.g. 'VOLT':['v','1.0e-9'] it uses for translation different units e.g. eV to GeV
-        in case, dict has list with len=3, e.g. 'R11': ['r', 0, 0] it uses as indices e.g. r[0, 0]
+        in case of dict has list, e.g. 'VOLT':['v','1.0e-9'] it uses for translation
+        different units e.g. eV to GeV in case, dict has list with len=3, e.g.
+        'R11': ['r', 0, 0] it uses as indices e.g. r[0, 0]
         """
 
         self.elegant_matrix = {}
@@ -169,7 +182,8 @@ class ElegantLatticeConverter:
 
         self.init_convert_matrix()
 
-        # Some elements are deleted from the matrix to exclude ambiguity in elements conversion
+        # Some elements are deleted from the matrix to exclude ambiguity in elements
+        # conversion
         del self.elegant_matrix["CSRCSBEND"]
         del self.elegant_matrix["RFCW"]
 
@@ -214,7 +228,8 @@ class ElegantLatticeConverter:
                     print(
                         "********* ERROR! NO "
                         + token
-                        + " in function conversion or constants list in calc_rpn function. "
+                        + " in function conversion or constants list in calc_rpn"
+                        " function. "
                         + info
                     )
                     sys.exit()
@@ -223,7 +238,8 @@ class ElegantLatticeConverter:
 
     def convert_val(self, str, constants, info):
         """
-        Convert string input value to float or change input string value by value from constants array
+        Convert string input value to float or change input string value by value from
+        constants array.
         """
 
         try:
@@ -364,9 +380,9 @@ class ElegantLatticeConverter:
 
                             if tmp.__class__ == list:
                                 if len(tmp) == 2:
-                                    elements_list[elem].element.__dict__[
-                                        tmp[0]
-                                    ] = val * float(tmp[1])
+                                    elements_list[elem].element.__dict__[tmp[0]] = (
+                                        val * float(tmp[1])
+                                    )
                                 elif len(tmp) == 3:
                                     print(elements_list[elem].element, tmp)
                                     elements_list[elem].element.__dict__[tmp[0]][
@@ -519,7 +535,8 @@ class ElegantLatticeConverter:
                 if elem not in elements_arr[elem.__class__.__name__]:
                     elements_arr[elem.__class__.__name__].append(elem)
 
-            # if element class not in the maxrix - replace it by Drift (L > 0.0) or skip it
+            # If element class not in the maxrix - replace it by Drift (L > 0.0) or skip
+            # it
             else:
                 if elem.l > 0.0:
                     elements_arr["Drift"].append(Drift(l=elem.l, eid=elem.id))
@@ -577,7 +594,7 @@ class ElegantLatticeConverter:
                                 + "="
                                 + str(90.0 - elem.element.__dict__[tmp])
                             )
-                            lines += ',CHANGE_P0=1,END1_FOCUS=1,END2_FOCUS=1,BODY_FOCUS_MODEL="SRS"'
+                            lines += ',CHANGE_P0=1,END1_FOCUS=1,END2_FOCUS=1,BODY_FOCUS_MODEL="SRS"'  # noqa: E501
                         elif elem.__class__ == Matrix and "rm" in tmp:
                             i, j = int(int(param[-2]) - 1), int(int(param[-1]) - 1)
                             lines += (

@@ -4,17 +4,26 @@ import os
 import sys
 import time
 
-from ocelot.adaptors.elegant_lattice_converter import *
+import pytest
+from elegant_lattice_conf import method, tws0  # noqa: F401
+
+from ocelot import MagneticLattice, lattice_transfer_map
+from ocelot.adaptors.elegant_lattice_converter import ElegantLatticeConverter
+from unit_tests.params import (
+    TOL,
+    check_matrix,
+    check_result,
+    json2numpy,
+    json_read,
+    json_save,
+    numpy2json,
+)
 
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_RES_DIR = FILE_DIR + "/ref_results/"
 
-from elegant_lattice_conf import *
 
-from unit_tests.params import *
-
-
-def test_elegant2ocelot(tws0, method, update_ref_values=False):
+def test_elegant2ocelot(tws0, method, update_ref_values=False):  # noqa: F811
     """elegant2ocelot convertion function test"""
 
     SC = ElegantLatticeConverter()
@@ -35,7 +44,7 @@ def test_elegant2ocelot(tws0, method, update_ref_values=False):
     assert check_result(result)
 
 
-def test_ocelot2elegant(tws0, method, update_ref_values=False):
+def test_ocelot2elegant(tws0, method, update_ref_values=False):  # noqa: F811
     """elegant2ocelot + ocelot2elegant + elegant2ocelot converters test"""
 
     # convert Elegant -> Ocelot
@@ -70,7 +79,7 @@ def test_ocelot2elegant(tws0, method, update_ref_values=False):
     assert check_result(result)
 
 
-def test_elegant2ocelot_flash(tws0, method, update_ref_values=False):
+def test_elegant2ocelot_flash(tws0, method, update_ref_values=False):  # noqa: F811
     """elegant2ocelot convertion function test"""
 
     SC = ElegantLatticeConverter()
@@ -91,7 +100,7 @@ def test_elegant2ocelot_flash(tws0, method, update_ref_values=False):
     assert check_result(result)
 
 
-def test_ocelot2elegant_flash(tws0, method, update_ref_values=False):
+def test_ocelot2elegant_flash(tws0, method, update_ref_values=False):  # noqa: F811
     """elegant2ocelot + ocelot2elegant + elegant2ocelot converters test"""
 
     # convert Elegant -> Ocelot
@@ -157,7 +166,7 @@ def teardown_function(function):
 
 
 @pytest.mark.update
-def test_update_ref_values(tws0, method, cmdopt):
+def test_update_ref_values(tws0, method, cmdopt):  # noqa: F811
     update_functions = []
     update_functions.append("test_elegant2ocelot")
     update_functions.append("test_ocelot2elegant")
