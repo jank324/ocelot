@@ -3,6 +3,8 @@ This module contains methods for coupling the plasma simulation code Wake-T
 with Ocelot.
 
 """
+from __future__ import annotations
+
 from typing import Optional
 
 import numpy as np
